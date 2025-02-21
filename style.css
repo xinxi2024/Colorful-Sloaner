@@ -1,0 +1,946 @@
+:root {
+    --color-1: #FF9999;
+    --color-2: #99FF99;
+    --color-3: #9999FF;
+    --color-4: #FFFF99;
+}
+
+#game {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    font-family: 'Arial', sans-serif;
+    overflow: hidden;
+    position: relative;
+}
+
+#start-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    position: relative;
+    /* background: linear-gradient(45deg, #1a2a6c, #b21f1f, #fdbb2d); */
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+}
+
+.start-content {
+    position: relative;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 40px 60px;
+    border-radius: 30px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    animation: fadeIn 1s ease-out;
+    max-width: 600px;
+    width: 90%;
+}
+
+.game-title {
+    font-size: 56px;
+    color: #2c3e50;
+    margin-bottom: 30px;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+    animation: titleFloat 3s ease-in-out infinite;
+    background: linear-gradient(45deg, #2c3e50, #3498db);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.game-description {
+    margin: 30px 0;
+    color: #34495e;
+    font-size: 20px;
+    line-height: 1.8;
+    text-align: center;
+}
+
+.game-description p {
+    margin: 15px 0;
+    opacity: 0;
+    animation: slideUp 0.5s ease forwards;
+}
+
+.game-description p:nth-child(1) { animation-delay: 0.3s; }
+.game-description p:nth-child(2) { animation-delay: 0.6s; }
+
+.start-button {
+    font-size: 26px;
+    padding: 18px 50px;
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    margin-top: 30px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0;
+    animation: fadeIn 0.5s ease 0.9s forwards;
+}
+
+.start-button:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.3);
+    background: linear-gradient(45deg, #2980b9, #3498db);
+}
+
+.floating-blocks {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.float-block {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: var(--color);
+    border-radius: 12px;
+    animation: float 6s ease-in-out infinite;
+    animation-delay: var(--delay);
+    opacity: 0.8;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.float-block:nth-child(1) { top: 20%; left: 20%; }
+.float-block:nth-child(2) { top: 60%; left: 80%; }
+.float-block:nth-child(3) { top: 80%; left: 30%; }
+.float-block:nth-child(4) { top: 30%; left: 70%; }
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-100px) rotate(180deg);
+    }
+}
+
+@keyframes titleFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.screen {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+#level-select {
+    padding: 20px;
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#level-select h1 {
+    color: white;
+    font-size: 42px;
+    margin-bottom: 40px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+#levels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.level-selection-container {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.level-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    min-width: 200px;
+}
+
+.level-tab {
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+}
+
+.level-tab.active {
+    background: white;
+    color: #2c3e50;
+}
+
+.level-tab .progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    transition: width 0.3s ease;
+}
+
+.level-groups {
+    flex: 1;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.level-groups::-webkit-scrollbar {
+    width: 6px;
+}
+
+.level-groups::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.level-groups::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.level-group {
+    display: none;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    padding: 10px;
+}
+
+.level-group.active {
+    display: grid;
+}
+
+.level-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.level-card:hover:not(.locked) {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.level-card h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.1em;
+}
+
+.level-card .difficulty {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 0.8em;
+    padding: 3px 8px;
+    border-radius: 10px;
+    color: white;
+}
+
+.difficulty-easy { background: #4CAF50; }
+.difficulty-medium { background: #FF9800; }
+.difficulty-hard { background: #f44336; }
+.difficulty-expert { background: #9C27B0; }
+
+.level-card.completed::after {
+    content: '✓';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #4CAF50;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.level-card.locked {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.level-card.locked::after {
+    content: '🔒';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 30px;
+}
+
+.level-stats {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.high-score {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.progress-bar {
+    height: 4px;
+    background: #eee;
+    border-radius: 2px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#game-info {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+#level-name {
+    font-size: 24px;
+    color: #2c3e50;
+    font-weight: bold;
+}
+
+#moves, #score {
+    font-size: 20px;
+    color: #2c3e50;
+}
+
+button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
+#score {
+    font-size: 32px;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    animation: scoreUpdate 0.3s ease-out;
+}
+
+@keyframes scoreUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+#board {
+    display: grid;
+    grid-template-columns: repeat(var(--grid-size, 8), 1fr);
+    gap: 4px;
+    margin: 0 auto;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    position: relative;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    will-change: transform;
+    backface-visibility: hidden;
+    width: calc(var(--grid-size) * (var(--block-size, 60px) + 4px));
+    height: calc(var(--grid-size) * (var(--block-size, 60px) + 4px));
+}
+
+.cell {
+    width: var(--block-size, 60px);
+    height: var(--block-size, 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(var(--block-size, 60px) * 0.4);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: relative;
+    color: transparent;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    margin: 0;
+    padding: 0;
+}
+
+.cell:hover {
+    transform: scale(1.05);
+}
+
+.cell.selected {
+    transform: scale(0.95);
+    box-shadow: 0 0 12px rgba(0,0,0,0.2);
+    animation: pulse 1s infinite;
+}
+
+.cell.matched {
+    animation: eliminate 0.5s ease-out forwards;
+}
+
+/* 添加交换动画类 */
+.cell.swapping {
+    transition: transform 0.3s ease-in-out;
+    z-index: 2;
+}
+
+/* 添加下落动画类 */
+.cell.falling {
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 1;
+}
+
+@keyframes cellAppear {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes disappear {
+    from {
+        transform: scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); }
+    50% { transform: scale(1); }
+    100% { transform: scale(0.95); }
+}
+
+@keyframes swapRight {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(64px); }
+}
+
+@keyframes swapLeft {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-64px); }
+}
+
+@keyframes swapUp {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-64px); }
+}
+
+@keyframes swapDown {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(64px); }
+}
+
+@keyframes eliminate {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2) rotate(180deg);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(0) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* 修改颜色样式，使用渐变背景 */
+.cell[data-value="1"] { 
+    background: linear-gradient(135deg, #FF9999, #FF5555); 
+}
+.cell[data-value="2"] { 
+    background: linear-gradient(135deg, #99FF99, #55FF55); 
+}
+.cell[data-value="3"] { 
+    background: linear-gradient(135deg, #9999FF, #5555FF); 
+}
+.cell[data-value="4"] { 
+    background: linear-gradient(135deg, #FFFF99, #FFFF55); 
+}
+.cell[data-value="5"] { 
+    background: linear-gradient(135deg, #FF99FF, #FF55FF); 
+}
+.cell[data-value="6"] { 
+    background: linear-gradient(135deg, #99FFFF, #55FFFF); 
+}
+
+#timer {
+    font-size: 1.5em;
+    color: #fff;
+    background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+    padding: 10px 20px;
+    border-radius: 10px;
+    margin: 10px 0;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* 存档提示样式 */
+.save-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    animation: fadeOut 2s forwards;
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+    }
+    70% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+/* 成就按钮样式 */
+.achievements-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.achievements-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+/* 成就面板样式 */
+.achievements-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 30px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+}
+
+.achievements-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(0,0,0,0.1);
+}
+
+.achievements-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 24px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 28px;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+}
+
+.achievements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.achievement-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.achievement-item.unlocked {
+    background: linear-gradient(45deg, #E3F2FD, #BBDEFB);
+}
+
+.achievement-item.locked {
+    opacity: 0.7;
+    filter: grayscale(1);
+}
+
+.achievement-icon {
+    font-size: 30px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.achievement-info {
+    flex: 1;
+}
+
+.achievement-name {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.achievement-desc {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.achievement-unlocked {
+    color: #4CAF50;
+    font-size: 24px;
+}
+
+/* 成就通知样式 */
+.achievement-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    animation: slideInRight 0.5s ease;
+    z-index: 1000;
+}
+
+.achievement-notification.fade-out {
+    animation: slideOutRight 0.5s ease forwards;
+}
+
+.achievement-notification .achievement-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+}
+
+.achievement-notification .achievement-content {
+    flex: 1;
+}
+
+.achievement-notification .achievement-title {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 3px;
+}
+
+.achievement-notification .achievement-description {
+    color: #666;
+    font-size: 0.9em;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+#level-select .back-to-home {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+#level-select .back-to-home:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.level-tab .level-count {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+}
+
+.level-tab.active .level-count {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.level-difficulty {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 0.8em;
+    padding: 3px 8px;
+    border-radius: 10px;
+    color: white;
+}
+
+.difficulty-1 { background: #4CAF50; }
+.difficulty-2 { background: #2196F3; }
+.difficulty-3 { background: #FF9800; }
+.difficulty-4 { background: #f44336; }
+.difficulty-5 { background: #9C27B0; }
+
+/* 缩小效果 */
+.cell.shrink {
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+
+.cell.shrink:hover {
+    transform: scale(1);
+}
+
+/* 旋转效果 */
+.cell.rotate {
+    animation: rotateBlock 2s infinite linear;
+}
+
+@keyframes rotateBlock {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 脉动效果 */
+.cell.pulse {
+    animation: pulseBlock 1.5s infinite ease-in-out;
+}
+
+@keyframes pulseBlock {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+}
+
+/* 动态大小变化 */
+.cell.dynamic {
+    animation: dynamicSize 3s infinite ease-in-out;
+}
+
+@keyframes dynamicSize {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.85); }
+    100% { transform: scale(1); }
+}
+
+/* 渐变效果 */
+.cell.fade {
+    animation: fadeEffect 2s infinite ease-in-out;
+}
+
+@keyframes fadeEffect {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* 不规则大小 */
+.cell.irregular {
+    --random-size: calc(45px + (var(--block-index) * 2px));
+    width: var(--random-size);
+    height: var(--random-size);
+}
+
+/* 组合效果 */
+.cell.combined {
+    animation: 
+        pulseBlock 1.5s infinite ease-in-out,
+        rotateBlock 2s infinite linear,
+        fadeEffect 2s infinite ease-in-out;
+}
