@@ -269,6 +269,10 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .level-card:hover:not(.locked) {
@@ -483,7 +487,7 @@ button:hover {
 }
 
 .cell.matched {
-    animation: eliminate 0.5s ease-out forwards;
+    animation: eliminate 0.3s ease-out;
 }
 
 /* 添加交换动画类 */
@@ -552,11 +556,10 @@ button:hover {
         opacity: 1;
     }
     50% {
-        transform: scale(1.2) rotate(180deg);
-        opacity: 0.5;
+        transform: scale(1.2);
     }
     100% {
-        transform: scale(0) rotate(360deg);
+        transform: scale(0);
         opacity: 0;
     }
 }
@@ -887,9 +890,10 @@ button:hover {
     transform: scale(1);
 }
 
-/* 旋转效果 */
+/* 修改旋转效果 */
 .cell.rotate {
-    animation: rotateBlock 2s infinite linear;
+    animation: rotateBlock 4s infinite linear;
+    transform-origin: center;
 }
 
 @keyframes rotateBlock {
@@ -897,9 +901,9 @@ button:hover {
     to { transform: rotate(360deg); }
 }
 
-/* 脉动效果 */
+/* 修改脉动效果 */
 .cell.pulse {
-    animation: pulseBlock 1.5s infinite ease-in-out;
+    animation: pulseBlock 2s infinite ease-in-out;
 }
 
 @keyframes pulseBlock {
@@ -908,39 +912,394 @@ button:hover {
     100% { transform: scale(1); }
 }
 
-/* 动态大小变化 */
+/* 修改动态大小变化 */
 .cell.dynamic {
-    animation: dynamicSize 3s infinite ease-in-out;
+    animation: dynamicSize 4s infinite ease-in-out;
 }
 
 @keyframes dynamicSize {
     0% { transform: scale(1); }
-    50% { transform: scale(0.85); }
+    50% { transform: scale(0.9); }
     100% { transform: scale(1); }
 }
 
-/* 渐变效果 */
+/* 修改渐变效果 */
 .cell.fade {
-    animation: fadeEffect 2s infinite ease-in-out;
+    animation: fadeEffect 3s infinite ease-in-out;
 }
 
 @keyframes fadeEffect {
     0% { opacity: 1; }
-    50% { opacity: 0.7; }
+    50% { opacity: 0.8; }
     100% { opacity: 1; }
 }
 
 /* 不规则大小 */
 .cell.irregular {
-    --random-size: calc(45px + (var(--block-index) * 2px));
+    --random-size: calc(var(--block-size) * 0.9 + (var(--block-index) % 3) * 2px);
     width: var(--random-size);
     height: var(--random-size);
 }
 
-/* 组合效果 */
+/* 组合效果 - 限制同时只能有一个变换效果 */
 .cell.combined {
-    animation: 
-        pulseBlock 1.5s infinite ease-in-out,
-        rotateBlock 2s infinite linear,
-        fadeEffect 2s infinite ease-in-out;
+    animation: pulseBlock 2s infinite ease-in-out;
+}
+
+/* 添加关卡信息样式 */
+.level-info {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.level-info p {
+    margin: 5px 0;
+    color: #2c3e50;
+    font-size: 0.9em;
+}
+
+/* 连击动画样式 */
+.combo-popup {
+    position: fixed;
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: none;
+    z-index: 1000;
+    transition: all 1s ease-out;
+    text-align: center;
+    margin-left: -40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.combo-count {
+    font-size: 32px;
+    font-weight: bold;
+    color: #ff4081;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    animation: pulseCombo 0.5s ease-in-out infinite;
+}
+
+.combo-text {
+    font-size: 24px;
+    color: #f50057;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes pulseCombo {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* 更新得分动画样式 */
+.score-popup {
+    position: fixed;
+    transform: translateY(0);
+    opacity: 1;
+    color: #ffeb3b;
+    font-size: 28px;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 1000;
+    transition: all 1s ease-out;
+    transform-origin: center;
+    text-align: center;
+    margin-left: -30px;
+    animation: scoreFloat 1s ease-out;
+}
+
+@keyframes scoreFloat {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: translateY(-25px) scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-50px) scale(1);
+        opacity: 0;
+    }
+}
+
+/* 特殊方块样式 */
+.special-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    z-index: 2;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    animation: specialPulse 1.5s infinite ease-in-out;
+}
+
+.cell[data-special="bomb"] {
+    background: linear-gradient(135deg, #ff4d4d, #ff1a1a);
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+}
+
+.cell[data-special="lightning"] {
+    background: linear-gradient(135deg, #ffeb3b, #ffc107);
+    box-shadow: 0 0 10px rgba(255, 235, 59, 0.5);
+}
+
+.cell[data-special="rainbow"] {
+    background: linear-gradient(135deg, 
+        #ff0000, #ff7f00, #ffff00, #00ff00, 
+        #0000ff, #4b0082, #8f00ff
+    );
+    animation: rainbowShift 3s linear infinite;
+}
+
+.cell[data-special="magic"] {
+    background: linear-gradient(135deg, #e91e63, #9c27b0);
+    box-shadow: 0 0 15px rgba(233, 30, 99, 0.6);
+    animation: magicGlow 2s infinite alternate;
+}
+
+@keyframes specialPulse {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.2); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes rainbowShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes magicGlow {
+    from { box-shadow: 0 0 15px rgba(233, 30, 99, 0.6); }
+    to { box-shadow: 0 0 25px rgba(156, 39, 176, 0.8); }
+}
+
+/* 特殊方块消除效果 */
+.cell[data-special].matched {
+    animation: specialEliminate 0.5s ease-out;
+}
+
+@keyframes specialEliminate {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+/* 特殊方块和道具说明样式 */
+.special-block-info {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    animation: fadeInDown 0.5s ease-out;
+    transition: all 0.3s ease;
+}
+
+.special-block-info + .special-block-info {
+    margin-top: -10px;
+    background: rgba(255, 255, 255, 0.85);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+/* 锁定状态的特殊方块和道具说明 */
+.special-block-info.locked {
+    background: rgba(255, 255, 255, 0.7);
+    opacity: 0.8;
+    filter: grayscale(0.5);
+    cursor: not-allowed;
+    position: relative;
+    overflow: hidden;
+}
+
+.special-block-info.locked::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(2px);
+    z-index: 1;
+}
+
+.special-block-info.locked .special-block-title {
+    color: #666;
+}
+
+.special-block-info.locked .special-block-description {
+    color: #888;
+}
+
+.special-block-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.special-block-description {
+    color: #666;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.special-block-description + .special-block-description {
+    margin-top: 5px;
+    color: #4CAF50;
+    font-style: italic;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 道具栏容器样式 */
+.items-bar-container {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 15px;
+    margin: 20px auto;
+    max-width: 600px;
+}
+
+.items-title {
+    writing-mode: vertical-lr;
+    text-orientation: upright;
+    font-size: 20px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    background: linear-gradient(45deg, #f1c40f, #f39c12);
+    padding: 15px 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 2px;
+}
+
+/* 更新道具栏样式 */
+.items-bar {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    flex: 1;
+}
+
+/* 更新道具按钮样式 */
+.item-button {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.item-button:hover:not(.disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.item-button.disabled {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+}
+
+.item-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.item-button.disabled .item-count {
+    background: #95a5a6;
+}
+
+.item-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    margin-bottom: 8px;
+    z-index: 100;
+}
+
+.item-button:hover .item-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.board.using-item .cell {
+    cursor: crosshair;
+}
+
+.board.using-item .cell:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(52, 152, 219, 0.5);
 }
