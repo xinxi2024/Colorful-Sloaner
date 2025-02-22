@@ -408,47 +408,64 @@ function checkGameEnd() {
     const currentGroup = Math.ceil(currentLevel.id / 10);
     
     if (score >= currentLevel.target) {
+        // 立即停止所有游戏操作
+        isAnimating = true;
         stopTimer();
+        
         // 停止背景音乐并播放胜利音效
         audioFiles.background.pause();
         playSound('levelComplete');
         
-        // 先更新用户进度
+        // 更新用户进度
         updateUserProgress(currentLevel.id, score, true);
-        // 获取最新的用户数据
+        
+        // 获取最新的用户数据并检查成就
         const userData = loadUserData();
-        // 检查成就
         checkAchievements(userData, currentLevel.id, score, timeSpent);
+        
         // 清除存档
         clearSavedGame();
-        // 最后再显示通关提示并返回
+        
+        // 设置状态
+        localStorage.setItem('lastPageState', 'level-select');
+        localStorage.setItem('currentGroup', currentGroup.toString());
+        
+        // 显示通关提示并刷新页面
         setTimeout(() => {
             alert('恭喜通关！');
-            localStorage.setItem('lastPageState', 'level-select');
-            localStorage.setItem('currentGroup', currentGroup.toString());
             window.location.reload();
         }, 300);
+        return true;
     } else if (movesLeft <= 0 && !currentLevel.timeLimit) {
+        // 立即停止所有游戏操作
+        isAnimating = true;
         stopTimer();
+        
         // 停止背景音乐
         audioFiles.background.pause();
         
-        // 先更新用户进度
+        // 更新用户进度
         updateUserProgress(currentLevel.id, score, false);
-        // 获取最新的用户数据
-        const userData = loadUserData();
+        
         // 更新尝试次数
+        const userData = loadUserData();
         userData.levelAttempts[currentLevel.id] = (userData.levelAttempts[currentLevel.id] || 0) + 1;
         saveUserData(userData);
+        
         // 清除存档
         clearSavedGame();
-        // 最后再显示失败提示并返回
+        
+        // 设置状态
+        localStorage.setItem('currentGroup', currentGroup.toString());
+        
+        // 显示失败提示并刷新页面
         setTimeout(() => {
             alert('步数用完了，游戏结束！');
-            localStorage.setItem('currentGroup', currentGroup.toString());
-            returnToLevelSelect();
+            window.location.reload();
         }, 300);
+        return true;
     }
+    return false;
 }
 
 // 返回关卡选择
