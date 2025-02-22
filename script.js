@@ -35,11 +35,16 @@ function initAudio() {
 // 播放音效
 function playSound(soundName) {
     if (audioFiles[soundName]) {
-        audioFiles.background.pause();
-        audioFiles.background.currentTime = 0;
-        audioFiles.background.play().catch(e => console.log('Audio play failed:', e));
-        audioFiles[soundName].currentTime = 0;
-        audioFiles[soundName].play().catch(e => console.log('Audio play failed:', e));
+        // 如果是背景音乐，直接播放
+        if (soundName === 'background') {
+            audioFiles.background.play().catch(e => console.log('Audio play failed:', e));
+            return;
+        }
+        
+        // 如果是其他音效，不影响背景音乐
+        const sound = audioFiles[soundName];
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log('Audio play failed:', e));
     }
 }
 
