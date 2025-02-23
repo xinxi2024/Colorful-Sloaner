@@ -189,7 +189,7 @@ const levels = [
         colors: [1, 2, 3, 4, 5, 6],
         gridSize: 7,
         description: "更短的时间限制",
-        timeLimit: 30
+        timeLimit: 35
     },
     {
         id: 19,
