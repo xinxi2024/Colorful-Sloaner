@@ -439,84 +439,101 @@ function startLevel(level) {
 // 更新游戏信息显示
 function updateGameInfo() {
     const movesElement = document.getElementById('moves');
+    const scoreElement = document.getElementById('score');
+    
+    // 确保数值的准确性
+    const currentScore = parseInt(score);
+    const targetScore = parseInt(currentLevel.target);
+    
     if (currentLevel.timeLimit) {
         movesElement.textContent = `剩余时间: ${timeLeft}秒`;
     } else {
         movesElement.textContent = `剩余步数: ${movesLeft}`;
     }
-    document.getElementById('score').textContent = `得分: ${score} / ${currentLevel.target}`;
+    
+    scoreElement.textContent = `得分: ${currentScore} / ${targetScore}`;
+    
+    // 添加调试日志
+    console.log('分数更新：', currentScore, '/', targetScore);
+    
+    // 如果达到目标分数，立即检查游戏结束
+    if (currentScore >= targetScore && !isGameEnding) {
+        checkGameEnd();
+    }
 }
 
 // 检查游戏是否结束
 function checkGameEnd() {
-    if (isGameEnding) return false; // 如果已经在结束流程中，直接返回
+    if (isGameEnding) return false;
     
     const timeSpent = currentLevel.timeLimit ? currentLevel.timeLimit - timeLeft : null;
     const currentGroup = Math.ceil(currentLevel.id / 10);
     
-    if (score >= currentLevel.target) {
-        isGameEnding = true; // 设置结束状态
-        // 立即停止所有游戏操作
-        isAnimating = true;
-        stopTimer();
+    // 确保分数比较的准确性
+    const currentScore = parseInt(score);
+    const targetScore = parseInt(currentLevel.target);
+    
+    if (currentScore >= targetScore) {
+        console.log('达到目标分数：', currentScore, '/', targetScore); // 添加调试日志
         
-        // 停止背景音乐并播放胜利音效
+        isGameEnding = true;
+        isAnimating = true;
+        
+        // 立即停止所有游戏操作
+        stopTimer();
         stopBackgroundMusic();
         playSound('levelComplete');
         
         // 更新用户进度
-        updateUserProgress(currentLevel.id, score, true);
-        
-        // 获取最新的用户数据并检查成就
         const userData = loadUserData();
-        checkAchievements(userData, currentLevel.id, score, timeSpent);
+        updateUserProgress(currentLevel.id, currentScore, true);
+        checkAchievements(userData, currentLevel.id, currentScore, timeSpent);
         
-        // 清除存档
+        // 清除存档和更新状态
         clearSavedGame();
-        
-        // 设置状态
         localStorage.setItem('lastPageState', 'level-select');
         localStorage.setItem('currentGroup', currentGroup.toString());
         
-        // 延迟显示通关提示并刷新页面
-        setTimeout(() => {
-            if (isGameEnding) { // 再次检查以防重复触发
-                alert('恭喜通关！');
-                window.location.reload();
-            }
-        }, 300);
-        return true;
+        // 使用 Promise 确保动画和状态更新的顺序
+        return new Promise(resolve => {
+            setTimeout(() => {
+                if (isGameEnding) {
+                    alert('恭喜通关！');
+                    window.location.reload();
+                }
+                resolve(true);
+            }, 300);
+        });
     } else if (movesLeft <= 0 && !currentLevel.timeLimit) {
-        isGameEnding = true; // 设置结束状态
-        // 立即停止所有游戏操作
-        isAnimating = true;
-        stopTimer();
+        console.log('步数用完：', movesLeft); // 添加调试日志
         
-        // 停止背景音乐
+        isGameEnding = true;
+        isAnimating = true;
+        
+        // 立即停止所有游戏操作
+        stopTimer();
         stopBackgroundMusic();
         
         // 更新用户进度
-        updateUserProgress(currentLevel.id, score, false);
-        
-        // 更新尝试次数
         const userData = loadUserData();
+        updateUserProgress(currentLevel.id, currentScore, false);
         userData.levelAttempts[currentLevel.id] = (userData.levelAttempts[currentLevel.id] || 0) + 1;
         saveUserData(userData);
         
-        // 清除存档
+        // 清除存档和更新状态
         clearSavedGame();
-        
-        // 设置状态
         localStorage.setItem('currentGroup', currentGroup.toString());
         
-        // 延迟显示失败提示并刷新页面
-        setTimeout(() => {
-            if (isGameEnding) { // 再次检查以防重复触发
-                alert('步数用完了，游戏结束！');
-                window.location.reload();
-            }
-        }, 300);
-        return true;
+        // 使用 Promise 确保动画和状态更新的顺序
+        return new Promise(resolve => {
+            setTimeout(() => {
+                if (isGameEnding) {
+                    alert('步数用完了，游戏结束！');
+                    window.location.reload();
+                }
+                resolve(true);
+            }, 300);
+        });
     }
     return false;
 }
@@ -860,7 +877,7 @@ function checkMatches() {
 }
 
 async function eliminateMatches() {
-    if (isGameEnding) return; // 如果游戏正在结束，不执行消除
+    if (isGameEnding) return;
     
     let toEliminate = new Set();
     const size = currentLevel.gridSize;
@@ -962,35 +979,25 @@ async function eliminateMatches() {
     if (toEliminate.size > 0) {
         isAnimating = true;
         
-        // 播放消除音效
-        playSound('match');
-        
-        // 计算基础分数（每个方块2分）
+        // 计算得分
         let basePoints = toEliminate.size * 2;
-        
-        // 计算连击加成（每次连击增加10%，最高1.3倍）
         const comboBonus = comboCount > 0 ? Math.min(comboCount * 0.1, 0.3) : 0;
-        
-        // 计算最终得分
         const finalPoints = Math.floor(basePoints * (1 + comboBonus));
         
-        // 更新分数（在消除动画开始前）
+        // 更新分数
         score += finalPoints;
         updateGameInfo();
         
-        // 显示加分动画
+        // 显示动画
         const centerCoord = Array.from(toEliminate)[Math.floor(toEliminate.size / 2)];
         const [centerRow, centerCol] = centerCoord.split(',').map(Number);
         
-        // 显示连击文字
         if (comboCount > 0) {
             showComboAnimation(comboCount, centerRow, centerCol);
         }
-        
-        // 显示得分动画
         showScoreAnimation(finalPoints, centerRow, centerCol);
         
-        // 添加消除动画
+        // 执行消除动画
         const promises = [];
         toEliminate.forEach(coord => {
             const [row, col] = coord.split(',').map(Number);
@@ -1004,19 +1011,20 @@ async function eliminateMatches() {
             board[row][col] = null;
         });
         
-        // 等待所有消除动画完成
+        // 等待所有动画完成
         await Promise.all(promises);
         
         // 渲染并等待填充完成
         renderBoard();
         await fillBoard();
         
-        // 在动画完成后再检查游戏结束
+        // 在所有动画和填充完成后检查游戏结束
         if (!isGameEnding) {
-            checkGameEnd();
+            const gameEndResult = await checkGameEnd();
+            if (!gameEndResult) {
+                isAnimating = false;
+            }
         }
-        
-        isAnimating = false;
     } else {
         comboCount = 0;
     }
