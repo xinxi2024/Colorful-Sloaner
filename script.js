@@ -121,6 +121,60 @@ const achievements = {
         name: '战略家',
         description: '使用最少的步数完成一个关卡',
         icon: '🎯'
+    },
+    item_master: {
+        id: 'item_master',
+        name: '道具大师',
+        description: '成功使用10次道具',
+        icon: '🎁'
+    },
+    combo_king: {
+        id: 'combo_king',
+        name: '连击之王',
+        description: '在一次移动中触发5次以上的消除',
+        icon: '👊'
+    },
+    lucky_star: {
+        id: 'lucky_star',
+        name: '幸运星',
+        description: '使用彩虹方块消除整个棋盘',
+        icon: '🌈'
+    },
+    rookie_master: {
+        id: 'rookie_master',
+        name: '新手王者',
+        description: '完成新手区全部关卡',
+        icon: '🎓'
+    },
+    advanced_champion: {
+        id: 'advanced_champion',
+        name: '进阶冠军',
+        description: '完成进阶区全部关卡',
+        icon: '🏅'
+    },
+    challenge_conqueror: {
+        id: 'challenge_conqueror',
+        name: '挑战征服者',
+        description: '完成挑战区全部关卡',
+        icon: '🎪'
+    },
+    master_elite: {
+        id: 'master_elite',
+        name: '大师精英',
+        description: '完成大师区全部关卡',
+        icon: '🎭'
+    },
+    legend_supreme: {
+        id: 'legend_supreme',
+        name: '传说至尊',
+        description: '完成传说区全部关卡',
+        icon: '👑'
+    },
+    challenge_master_29: {
+        id: 'challenge_master_29',
+        name: '挑战之巅',
+        description: '完成第29关',
+        icon: '🌠'
     }
 };
 
@@ -141,6 +195,12 @@ function showStartScreen() {
     
     // 清除页面状态
     localStorage.removeItem('lastPageState');
+
+    // 自动检查并更新成就
+    const userData = loadUserData();
+    if (userData && userData.completedLevels && userData.completedLevels.length > 0) {
+        checkAchievements(userData, userData.lastPlayedLevel, userData.highScores[userData.lastPlayedLevel] || 0, null);
+    }
 }
 
 function showLevelSelect() {
@@ -1317,6 +1377,42 @@ function checkAchievements(userData, levelId, score, timeSpent) {
         userData.achievements.persistent = true;
         newAchievements.push(achievements.persistent);
     }
+
+    // 检查新手区完成成就
+    if (!userData.achievements.rookie_master && userData.completedLevels.includes(10)) {
+        userData.achievements.rookie_master = true;
+        newAchievements.push(achievements.rookie_master);
+    }
+
+    // 检查进阶区完成成就
+    if (!userData.achievements.advanced_champion && userData.completedLevels.includes(20)) {
+        userData.achievements.advanced_champion = true;
+        newAchievements.push(achievements.advanced_champion);
+    }
+
+    // 检查挑战区完成成就
+    if (!userData.achievements.challenge_conqueror && userData.completedLevels.includes(30)) {
+        userData.achievements.challenge_conqueror = true;
+        newAchievements.push(achievements.challenge_conqueror);
+    }
+
+    // 检查大师区完成成就
+    if (!userData.achievements.master_elite && userData.completedLevels.includes(40)) {
+        userData.achievements.master_elite = true;
+        newAchievements.push(achievements.master_elite);
+    }
+
+    // 检查传说区完成成就
+    if (!userData.achievements.legend_supreme && userData.completedLevels.includes(50)) {
+        userData.achievements.legend_supreme = true;
+        newAchievements.push(achievements.legend_supreme);
+    }
+
+    // 检查第29关特殊成就
+    if (!userData.achievements.challenge_master_29 && userData.completedLevels.includes(29)) {
+        userData.achievements.challenge_master_29 = true;
+        newAchievements.push(achievements.challenge_master_29);
+    }
     
     // 保存更新后的用户数据
     saveUserData(userData);
@@ -1646,5 +1742,3 @@ function shuffleBoard() {
     // 重新渲染棋盘
     renderBoard();
 }
-
-
