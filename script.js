@@ -10,6 +10,7 @@ let currentUser = null;
 let lastPageState = null;
 let comboCount = 0;
 let lastEliminateTime = 0;
+let isGameEnding = false;
 
 // 更新成就系统
 const achievements = {
@@ -448,10 +449,13 @@ function updateGameInfo() {
 
 // 检查游戏是否结束
 function checkGameEnd() {
+    if (isGameEnding) return false; // 如果已经在结束流程中，直接返回
+    
     const timeSpent = currentLevel.timeLimit ? currentLevel.timeLimit - timeLeft : null;
     const currentGroup = Math.ceil(currentLevel.id / 10);
     
     if (score >= currentLevel.target) {
+        isGameEnding = true; // 设置结束状态
         // 立即停止所有游戏操作
         isAnimating = true;
         stopTimer();
@@ -474,13 +478,16 @@ function checkGameEnd() {
         localStorage.setItem('lastPageState', 'level-select');
         localStorage.setItem('currentGroup', currentGroup.toString());
         
-        // 显示通关提示并刷新页面
+        // 延迟显示通关提示并刷新页面
         setTimeout(() => {
-            alert('恭喜通关！');
-            window.location.reload();
+            if (isGameEnding) { // 再次检查以防重复触发
+                alert('恭喜通关！');
+                window.location.reload();
+            }
         }, 300);
         return true;
     } else if (movesLeft <= 0 && !currentLevel.timeLimit) {
+        isGameEnding = true; // 设置结束状态
         // 立即停止所有游戏操作
         isAnimating = true;
         stopTimer();
@@ -502,10 +509,12 @@ function checkGameEnd() {
         // 设置状态
         localStorage.setItem('currentGroup', currentGroup.toString());
         
-        // 显示失败提示并刷新页面
+        // 延迟显示失败提示并刷新页面
         setTimeout(() => {
-            alert('步数用完了，游戏结束！');
-            window.location.reload();
+            if (isGameEnding) { // 再次检查以防重复触发
+                alert('步数用完了，游戏结束！');
+                window.location.reload();
+            }
         }, 300);
         return true;
     }
@@ -864,7 +873,9 @@ function checkMatches() {
     return false;
 }
 
-function eliminateMatches() {
+async function eliminateMatches() {
+    if (isGameEnding) return; // 如果游戏正在结束，不执行消除
+    
     let toEliminate = new Set();
     const size = currentLevel.gridSize;
     const now = Date.now();
@@ -958,6 +969,8 @@ function eliminateMatches() {
     }
     
     if (toEliminate.size > 0) {
+        isAnimating = true; // 设置动画状态
+        
         // 播放消除音效
         playSound('match');
         
@@ -982,18 +995,32 @@ function eliminateMatches() {
         // 显示得分动画
         showScoreAnimation(finalPoints, centerRow, centerCol);
         
+        // 添加消除动画
+        const promises = [];
         toEliminate.forEach(coord => {
             const [row, col] = coord.split(',').map(Number);
             const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
             if (cell) {
                 cell.classList.add('matched');
+                promises.push(new Promise(resolve => {
+                    cell.addEventListener('animationend', resolve, {once: true});
+                }));
             }
             board[row][col] = null;
         });
         
+        // 等待所有消除动画完成
+        await Promise.all(promises);
+        
         score += finalPoints;
         updateGameInfo();
-        checkGameEnd();
+        
+        // 在动画完成后再检查游戏结束
+        if (!isGameEnding) {
+            checkGameEnd();
+        }
+        
+        isAnimating = false; // 重置动画状态
     } else {
         // 如果没有可消除的方块，重置连击计数
         comboCount = 0;
@@ -1064,6 +1091,8 @@ function showScoreAnimation(points, row, col) {
 }
 
 async function fillBoard() {
+    if (isGameEnding) return; // 如果游戏正在结束，不执行填充
+    
     isAnimating = true;
     const size = currentLevel.gridSize;
     const boardElement = document.getElementById('board');
@@ -1113,14 +1142,14 @@ async function fillBoard() {
     // 第四步：渲染新的棋盘状态
     renderBoard();
     
+    // 等待动画完成
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     // 第五步：检查是否有可消除的组合
-    setTimeout(() => {
-        isAnimating = false;
-        if (checkMatches()) {
-            eliminateMatches();
-            setTimeout(() => fillBoard(), 300);
-        }
-    }, 300);
+    isAnimating = false;
+    if (!isGameEnding && checkMatches()) {
+        eliminateMatches();
+    }
 }
 
 // 修改初始化代码（文件末尾）
