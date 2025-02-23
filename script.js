@@ -1,3 +1,4 @@
+// 游戏状态变量
 let currentLevel = null;
 let board = [];
 let score = 0;
@@ -9,44 +10,6 @@ let currentUser = null;
 let lastPageState = null;
 let comboCount = 0;
 let lastEliminateTime = 0;
-
-// 音频相关
-const audioFiles = {
-    background: new Audio('assets/audio/background.mp3'),
-    match: new Audio('assets/audio/match.mp3'),
-    swap: new Audio('assets/audio/swap.mp3'),
-    levelComplete: new Audio('assets/audio/level-complete.mp3'),
-    achievement: new Audio('assets/audio/achievement.mp3')
-};
-
-// 设置背景音乐循环播放
-audioFiles.background.loop = true;
-
-// 初始化音频
-function initAudio() {
-    // 设置所有音频的音量
-    Object.values(audioFiles).forEach(audio => {
-        audio.volume = 0.5;
-    });
-    // 背景音乐音量稍微调低
-    audioFiles.background.volume = 0.3;
-}
-
-// 播放音效
-function playSound(soundName) {
-    if (audioFiles[soundName]) {
-        // 如果是背景音乐，直接播放
-        if (soundName === 'background') {
-            audioFiles.background.play().catch(e => console.log('Audio play failed:', e));
-            return;
-        }
-        
-        // 如果是其他音效，不影响背景音乐
-        const sound = audioFiles[soundName];
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log('Audio play failed:', e));
-    }
-}
 
 // 更新成就系统
 const achievements = {
@@ -184,6 +147,11 @@ function showStartScreen() {
     document.getElementById('level-select').style.display = 'none';
     document.getElementById('game-screen').style.display = 'none';
     
+    // 停止其他背景音乐
+    stopBackgroundMusic();
+    // 播放菜单背景音乐
+    playSound('menuBgm');
+    
     // 添加成就按钮
     if (!document.querySelector('.achievements-btn')) {
         const achievementsBtn = document.createElement('button');
@@ -193,12 +161,22 @@ function showStartScreen() {
         document.querySelector('.start-content').appendChild(achievementsBtn);
     }
     
+    // 添加用户头像
+    if (!document.getElementById('user-avatar')) {
+        const userAvatar = document.createElement('div');
+        userAvatar.id = 'user-avatar';
+        userAvatar.className = 'user-avatar';
+        userAvatar.innerHTML = '👤';
+        userAvatar.addEventListener('click', toggleUserPanel);
+        document.querySelector('.start-content').insertBefore(userAvatar, document.querySelector('.start-content').firstChild);
+    }
+    
     // 清除页面状态
     localStorage.removeItem('lastPageState');
 
     // 自动检查并更新成就
     const userData = loadUserData();
-    if (userData && userData.completedLevels && userData.completedLevels.length > 0) {
+    if (userData && userData.completedLevels && userData.completedLevels.length > 0 && userData.lastPlayedLevel) {
         checkAchievements(userData, userData.lastPlayedLevel, userData.highScores[userData.lastPlayedLevel] || 0, null);
     }
 }
@@ -412,6 +390,10 @@ function initLevelSelect() {
 
 // 开始指定关卡
 function startLevel(level) {
+    // 停止菜单背景音乐并播放游戏背景音乐
+    stopBackgroundMusic();
+    playSound('background');
+    
     currentLevel = level;
     score = 0;
     movesLeft = level.moves;
@@ -436,9 +418,6 @@ function startLevel(level) {
     userData.usedItems[level.id] = [];
     
     saveUserData(userData);
-    
-    // 播放背景音乐
-    playSound('background');
     
     // 更新UI
     document.getElementById('level-select').style.display = 'none';
@@ -478,7 +457,7 @@ function checkGameEnd() {
         stopTimer();
         
         // 停止背景音乐并播放胜利音效
-        audioFiles.background.pause();
+        stopBackgroundMusic();
         playSound('levelComplete');
         
         // 更新用户进度
@@ -507,7 +486,7 @@ function checkGameEnd() {
         stopTimer();
         
         // 停止背景音乐
-        audioFiles.background.pause();
+        stopBackgroundMusic();
         
         // 更新用户进度
         updateUserProgress(currentLevel.id, score, false);
@@ -535,9 +514,9 @@ function checkGameEnd() {
 
 // 返回关卡选择
 function returnToLevelSelect() {
-    // 停止背景音乐
-    audioFiles.background.pause();
-    audioFiles.background.currentTime = 0;
+    // 停止游戏背景音乐并播放菜单音乐
+    stopBackgroundMusic();
+    playSound('menuBgm');
     
     // 停止计时器
     stopTimer();
@@ -785,7 +764,7 @@ let selectedCells = [];
 function handleCellClick(event) {
     if (isAnimating || (!currentLevel.timeLimit && movesLeft <= 0)) return;
     
-    const cell = event.target;
+    const cell = event.target.closest('.cell');
     const row = parseInt(cell.dataset.row);
     const col = parseInt(cell.dataset.col);
     
@@ -795,8 +774,14 @@ function handleCellClick(event) {
         selectedCells.push({ row, col, element: cell });
     } else {
         const firstCell = selectedCells[0];
-        // 检查是否相邻
-        if (isAdjacent(firstCell.row, firstCell.col, row, col)) {
+        
+        // 检查是否相邻或者是否有魔法方块
+        const isFirstCellMagic = typeof board[firstCell.row][firstCell.col] === 'object' && 
+                                board[firstCell.row][firstCell.col].type === SPECIAL_BLOCKS.MAGIC;
+        const isSecondCellMagic = typeof board[row][col] === 'object' && 
+                                 board[row][col].type === SPECIAL_BLOCKS.MAGIC;
+        
+        if (isAdjacent(firstCell.row, firstCell.col, row, col) || isFirstCellMagic || isSecondCellMagic) {
             // 播放交换音效
             playSound('swap');
             
@@ -1150,9 +1135,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.getElementById('start-btn').addEventListener('click', () => {
-    initUser(); // 初始化用户数据
+    enableAudio();  // 启用音频
+    initUser();
     
-    // 检查是否有存档
     if (loadGame()) {
         const continueGame = confirm('检测到游戏存档，是否继续上次的游戏？');
         if (continueGame) {
@@ -1176,35 +1161,33 @@ function generateUserId() {
 function initUser() {
     currentUser = localStorage.getItem('currentUser');
     if (!currentUser) {
-        currentUser = generateUserId();
-        localStorage.setItem('currentUser', currentUser);
+        window.location.href = 'login.html';
+        return null;
     }
     
-    let userData = loadUserData();
-    if (!userData) {
-        userData = {
-            completedLevels: [],
-            highScores: {},
-            lastPlayedLevel: null,
-            achievements: {},
-            levelAttempts: {},
-            perfectLevels: 0,
-            totalPlayTime: 0,
-            items: {},        // 新增：用户拥有的道具
-            unlockedItems: [] // 新增：已解锁的道具类型
-        };
-        saveUserData(userData);
+    const users = getAllUsers();
+    const user = users[currentUser];
+    if (!user) {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'login.html';
+        return null;
     }
-    return userData;
+    
+    return user.data;
 }
 
 function loadUserData() {
-    const userData = localStorage.getItem(`userData_${currentUser}`);
-    return userData ? JSON.parse(userData) : null;
+    const users = getAllUsers();
+    const user = users[currentUser];
+    return user ? user.data : null;
 }
 
-function saveUserData(data) {
-    localStorage.setItem(`userData_${currentUser}`, JSON.stringify(data));
+function saveUserData(userData) {
+    const users = getAllUsers();
+    if (users[currentUser]) {
+        users[currentUser].data = userData;
+        saveAllUsers(users);
+    }
 }
 
 function updateUserProgress(levelId, score, completed) {
@@ -1217,7 +1200,9 @@ function updateUserProgress(levelId, score, completed) {
             achievements: {},
             levelAttempts: {},
             perfectLevels: 0,
-            totalPlayTime: 0
+            totalPlayTime: 0,
+            totalScore: 0,
+            completedLevelsCount: 0
         };
     }
 
@@ -1225,11 +1210,13 @@ function updateUserProgress(levelId, score, completed) {
     if (completed && !userData.completedLevels.includes(levelId)) {
         userData.completedLevels.push(levelId);
         userData.completedLevels.sort((a, b) => a - b); // 保持有序
+        userData.completedLevelsCount = userData.completedLevels.length;
     }
 
     // 更新最高分
     if (!userData.highScores[levelId] || score > userData.highScores[levelId]) {
         userData.highScores[levelId] = score;
+        userData.totalScore = Object.values(userData.highScores).reduce((a, b) => a + b, 0);
     }
 
     // 更新最后玩过的关卡
@@ -1288,7 +1275,7 @@ function startTimer() {
             if (timeLeft <= 0) {
                 stopTimer();
                 // 停止背景音乐
-                audioFiles.background.pause();
+                stopBackgroundMusic();
                 setTimeout(() => {
                     alert('时间到！游戏结束！');
                     returnToLevelSelect();
@@ -1329,16 +1316,16 @@ function showAchievement(achievement) {
 
 // 检查并更新成就
 function checkAchievements(userData, levelId, score, timeSpent) {
-    // 确保 userData 和其属性存在
-    if (!userData || !userData.completedLevels || !userData.achievements) {
-        userData = {
-            completedLevels: [],
-            achievements: {},
-            levelAttempts: {},
-            perfectLevels: 0,
-            highScores: {}
-        };
+    if (!userData || !userData.achievements) {
+        userData = loadUserData();
+        if (!userData || !userData.achievements) return;
     }
+    
+    // 初始化必要的属性
+    if (!userData.completedLevels) userData.completedLevels = [];
+    if (!userData.levelAttempts) userData.levelAttempts = {};
+    if (!userData.perfectLevels) userData.perfectLevels = 0;
+    if (!userData.highScores) userData.highScores = {};
     
     const newAchievements = [];
     
@@ -1361,7 +1348,7 @@ function checkAchievements(userData, levelId, score, timeSpent) {
     }
     
     // 检查"完美主义者"成就
-    if (score === currentLevel.target) {
+    if (currentLevel && score === currentLevel.target) {
         userData.perfectLevels = (userData.perfectLevels || 0) + 1;
         if (!userData.achievements.perfectionist && userData.perfectLevels >= 3) {
             userData.achievements.perfectionist = true;
@@ -1524,8 +1511,10 @@ function initItemsBar() {
     board.parentNode.insertBefore(itemsBarContainer, board.nextSibling);
 }
 
-// 修改 useItem 函数
+// 修改道具使用函数
 function useItem(itemType) {
+    if (isAnimating) return; // 如果正在动画中，不允许使用道具
+    
     const userData = loadUserData();
     if (!userData.items[itemType] || userData.items[itemType] <= 0) return;
     
@@ -1540,6 +1529,9 @@ function useItem(itemType) {
     const board = document.getElementById('board');
     board.classList.add('using-item');
     
+    // 播放对应的道具音效
+    playSound(itemType);
+    
     // 移除之前的所有道具点击事件
     const cells = board.getElementsByClassName('cell');
     Array.from(cells).forEach(cell => {
@@ -1549,8 +1541,11 @@ function useItem(itemType) {
     // 根据道具类型添加不同的点击效果
     switch(itemType) {
         case ITEMS.SHUFFLE:
-            shuffleBoard();
-            finishItemUse(itemType);
+            isAnimating = true;
+            shuffleBoard().then(() => {
+                isAnimating = false;
+                finishItemUse(itemType);
+            });
             break;
             
         case ITEMS.COLOR_BOMB:
@@ -1570,8 +1565,10 @@ function useItem(itemType) {
     board.dataset.usingItem = itemType;
 }
 
-// 添加道具点击处理函数
+// 修改道具点击处理函数
 function handleItemClick(e) {
+    if (isAnimating) return; // 如果正在动画中，不允许点击
+    
     const cell = e.target.closest('.cell');
     if (!cell) return;
     
@@ -1579,28 +1576,38 @@ function handleItemClick(e) {
     const col = parseInt(cell.dataset.col);
     const itemType = document.getElementById('board').dataset.usingItem;
     
+    isAnimating = true; // 开始动画
+    
     switch(itemType) {
         case ITEMS.COLOR_BOMB:
             const color = typeof board[row][col] === 'object' ? board[row][col].color : board[row][col];
             if (color) {
-                eliminateColor(color);
-                finishItemUse(itemType);
+                eliminateColor(color).then(() => {
+                    isAnimating = false;
+                    finishItemUse(itemType);
+                });
+            } else {
+                isAnimating = false;
             }
             break;
             
         case ITEMS.HAMMER:
-            eliminateCell(row, col);
-            finishItemUse(itemType);
+            eliminateCell(row, col).then(() => {
+                isAnimating = false;
+                finishItemUse(itemType);
+            });
             break;
             
         case ITEMS.CROSS:
-            eliminateCross(row, col);
-            finishItemUse(itemType);
+            eliminateCross(row, col).then(() => {
+                isAnimating = false;
+                finishItemUse(itemType);
+            });
             break;
     }
 }
 
-// 添加道具效果完成函数
+// 修改道具效果完成函数
 function finishItemUse(itemType) {
     const board = document.getElementById('board');
     board.classList.remove('using-item');
@@ -1615,15 +1622,82 @@ function finishItemUse(itemType) {
     initItemsBar();
     
     // 检查并填充空缺
-    setTimeout(() => fillBoard(), 300);
+    setTimeout(() => {
+        if (!isAnimating) {
+            fillBoard();
+        }
+    }, 300);
 }
 
-// 添加各种道具效果函数
-function eliminateColor(color) {
+// 修改消除函数为异步函数
+async function eliminateCell(row, col) {
+    if (board[row][col]) {
+        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        if (cell) {
+            cell.classList.add('matched');
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        board[row][col] = null;
+        renderBoard();
+        playSound('match');
+    }
+}
+
+async function eliminateCross(row, col) {
     const size = currentLevel.gridSize;
     let toEliminate = new Set();
     
-    // 收集所有匹配颜色的方块
+    // 收集要消除的方块坐标
+    for (let j = 0; j < size; j++) {
+        if (board[row][j]) {
+            toEliminate.add(`${row},${j}`);
+        }
+    }
+    
+    for (let i = 0; i < size; i++) {
+        if (board[i][col]) {
+            toEliminate.add(`${i},${col}`);
+        }
+    }
+    
+    if (toEliminate.size > 0) {
+        // 计算得分
+        let basePoints = Math.floor(toEliminate.size * 0.5);
+        showScoreAnimation(basePoints, row, col);
+        
+        // 添加消除动画
+        toEliminate.forEach(coord => {
+            const [r, c] = coord.split(',').map(Number);
+            const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+            if (cell) {
+                cell.classList.add('matched');
+            }
+        });
+        
+        // 等待动画完成
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // 更新棋盘
+        toEliminate.forEach(coord => {
+            const [r, c] = coord.split(',').map(Number);
+            board[r][c] = null;
+        });
+        
+        score += basePoints;
+        updateGameInfo();
+        playSound('match');
+        renderBoard();
+        
+        // 检查游戏结束
+        checkGameEnd();
+    }
+}
+
+async function eliminateColor(color) {
+    const size = currentLevel.gridSize;
+    let toEliminate = new Set();
+    
+    // 收集要消除的方块
     for (let i = 0; i < size; i++) {
         for (let j = 0; j < size; j++) {
             const cell = board[i][j];
@@ -1636,81 +1710,41 @@ function eliminateColor(color) {
     
     if (toEliminate.size > 0) {
         // 计算得分
-        let basePoints = toEliminate.size * 2;
-        const finalPoints = Math.floor(basePoints);
-        
-        // 显示得分动画
+        let basePoints = Math.floor(toEliminate.size * 0.5);
         const firstCoord = Array.from(toEliminate)[0];
         const [centerRow, centerCol] = firstCoord.split(',').map(Number);
-        showScoreAnimation(finalPoints, centerRow, centerCol);
+        showScoreAnimation(basePoints, centerRow, centerCol);
         
-        // 先标记要消除的方块
+        // 添加消除动画
         toEliminate.forEach(coord => {
-            const [row, col] = coord.split(',').map(Number);
-            const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            const [r, c] = coord.split(',').map(Number);
+            const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
             if (cell) {
                 cell.classList.add('matched');
             }
         });
         
-        // 等待消除动画完成后再更新棋盘
-        setTimeout(() => {
-            // 更新board数组
-            toEliminate.forEach(coord => {
-                const [row, col] = coord.split(',').map(Number);
-                board[row][col] = null;
-            });
-            
-            score += finalPoints;
-            updateGameInfo();
-            
-            // 播放消除音效
-            playSound('match');
-            
-            // 渲染并填充棋盘
-            renderBoard();
-            setTimeout(fillBoard, 300);
-            checkGameEnd();
-        }, 300);
-    }
-}
-
-function eliminateCell(row, col) {
-    if (board[row][col]) {
-        board[row][col] = null;
-        renderBoard();
+        // 等待动画完成
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // 更新棋盘
+        toEliminate.forEach(coord => {
+            const [r, c] = coord.split(',').map(Number);
+            board[r][c] = null;
+        });
+        
+        score += basePoints;
+        updateGameInfo();
         playSound('match');
-    }
-}
-
-function eliminateCross(row, col) {
-    const size = currentLevel.gridSize;
-    let eliminated = false;
-    
-    // 消除同行
-    for (let j = 0; j < size; j++) {
-        if (board[row][j]) {
-            board[row][j] = null;
-            eliminated = true;
-        }
-    }
-    
-    // 消除同列
-    for (let i = 0; i < size; i++) {
-        if (board[i][col]) {
-            board[i][col] = null;
-            eliminated = true;
-        }
-    }
-    
-    if (eliminated) {
         renderBoard();
-        playSound('match');
+        
+        // 检查游戏结束
+        checkGameEnd();
     }
 }
 
 // 添加洗牌函数
-function shuffleBoard() {
+async function shuffleBoard() {
     const size = currentLevel.gridSize;
     const flatBoard = [];
     
@@ -1729,6 +1763,16 @@ function shuffleBoard() {
         [flatBoard[i], flatBoard[j]] = [flatBoard[j], flatBoard[i]];
     }
     
+    // 添加洗牌动画效果
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(cell => {
+        cell.style.transition = 'transform 0.3s ease';
+        cell.style.transform = 'scale(0)';
+    });
+    
+    // 等待缩小动画完成
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     // 重新填充棋盘
     let index = 0;
     for (let i = 0; i < size; i++) {
@@ -1739,6 +1783,136 @@ function shuffleBoard() {
         }
     }
     
-    // 重新渲染棋盘
+    // 渲染新的棋盘状态
     renderBoard();
+    
+    // 添加放大动画效果
+    const newCells = document.querySelectorAll('.cell');
+    newCells.forEach(cell => {
+        cell.style.transform = 'scale(0)';
+        requestAnimationFrame(() => {
+            cell.style.transform = 'scale(1)';
+        });
+    });
+    
+    // 播放洗牌音效
+    playSound('shuffle');
+    
+    // 等待放大动画完成
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // 检查是否有可消除的组合
+    if (checkMatches()) {
+        eliminateMatches();
+        setTimeout(() => fillBoard(), 300);
+    }
+}
+
+function toggleUserPanel() {
+    let userPanel = document.querySelector('.user-panel');
+    if (userPanel) {
+        userPanel.remove();
+        return;
+    }
+
+    const panel = document.createElement('div');
+    panel.className = 'user-panel';
+    
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) return;
+
+    const users = getAllUsers();
+    const userData = users[currentUser]?.data || initUserData();
+    
+    const totalScore = Object.values(userData.highScores || {}).reduce((a, b) => a + b, 0);
+    const maxScore = Object.values(userData.highScores || {}).reduce((a, b) => Math.max(a, b), 0);
+    
+    panel.innerHTML = `
+        <div class="user-info-content">
+            <h3>用户信息</h3>
+            <p>用户名：${currentUser}</p>
+            <p>已完成关卡：${userData.completedLevelsCount || 0}</p>
+            <p>总分：${totalScore}</p>
+            <p>最高分：${maxScore}</p>
+            <button class="logout-btn" onclick="localStorage.removeItem('currentUser'); window.location.href = '../index.html';">登出</button>
+        </div>
+    `;
+    
+    // 获取头像元素的位置
+    const avatar = document.getElementById('user-avatar');
+    const avatarRect = avatar.getBoundingClientRect();
+    
+    // 将面板添加到body中以避免定位问题
+    document.body.appendChild(panel);
+    
+    // 设置面板的位置
+    panel.style.position = 'absolute';
+    panel.style.top = `${avatarRect.bottom + 5}px`;
+    panel.style.left = `${avatarRect.left}px`;
+    panel.style.zIndex = '1000';
+
+    // 点击面板外区域关闭面板
+    document.addEventListener('click', function closePanel(e) {
+        if (!panel.contains(e.target) && e.target.id !== 'user-avatar') {
+            panel.remove();
+            document.removeEventListener('click', closePanel);
+        }
+    });
+}
+
+// 修改登录页面加载事件
+document.addEventListener('DOMContentLoaded', () => {
+    // 如果在登录页面
+    if (document.getElementById('login-screen')) {
+        // 停止其他背景音乐
+        stopBackgroundMusic();
+        audio.menuBgm.pause();
+        // 播放登录背景音乐
+        playSound('loginBgm');
+        
+        // 清除上一次的页面状态
+        localStorage.removeItem('lastPageState');
+    }
+    // 如果在注册页面
+    else if (document.getElementById('register-screen')) {
+        // 停止其他背景音乐
+        stopBackgroundMusic();
+        audio.menuBgm.pause();
+        // 播放登录背景音乐
+        playSound('loginBgm');
+        
+        // 清除上一次的页面状态
+        localStorage.removeItem('lastPageState');
+    }
+    // 如果在游戏主页面
+    else {
+        checkLoginStatus();
+        document.getElementById('announcement-btn').addEventListener('click', showAnnouncement);
+        // 播放菜单背景音乐
+        playSound('menuBgm');
+        
+        // 检查页面状态
+        const lastState = localStorage.getItem('lastPageState');
+        if (lastState === 'level-select') {
+            showLevelSelect();
+        } else {
+            showStartScreen();
+        }
+    }
+});
+
+// 修改登录成功的处理函数（在auth.js中）
+function handleLoginSuccess(username) {
+    localStorage.setItem('currentUser', username);
+    // 清除上一次的页面状态，确保进入开始界面
+    localStorage.removeItem('lastPageState');
+    window.location.href = 'game/game.html';
+}
+
+// 修改注册成功的处理函数（在auth.js中）
+function handleRegisterSuccess(username) {
+    localStorage.setItem('currentUser', username);
+    // 清除上一次的页面状态，确保进入开始界面
+    localStorage.removeItem('lastPageState');
+    window.location.href = 'game/game.html';
 }

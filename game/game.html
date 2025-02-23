@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorful Sloaner</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../announcement.css">
+</head>
+<body>
+    <div id="game">
+        <div id="start-screen" class="screen">
+            <div class="start-content">
+                <h1 class="game-title">Colorful Sloaner</h1>
+                <div class="game-description">
+                    <p>连接三个相同颜色的方块来消除它们</p>
+                    <p>获得足够的分数来通过关卡</p>
+                </div>
+                <button id="start-btn" class="start-button">开始游戏</button>
+                <button id="announcement-btn" class="announcement-button">更新公告</button>
+            </div>
+            <div class="floating-blocks">
+                <div class="float-block" style="--delay: 0s; --color: var(--color-1);"></div>
+                <div class="float-block" style="--delay: 1s; --color: var(--color-2);"></div>
+                <div class="float-block" style="--delay: 2s; --color: var(--color-3);"></div>
+                <div class="float-block" style="--delay: 3s; --color: var(--color-4);"></div>
+            </div>
+        </div>
+
+        <div id="level-select" class="screen" style="display: none;">
+            <h1>选择关卡</h1>
+            <div id="levels-grid"></div>
+        </div>
+        
+        <div id="game-screen" class="screen" style="display: none;">
+            <div id="game-info">
+                <div id="level-name">第一关</div>
+                <div id="moves">剩余步数: 15</div>
+                <div id="score">得分: 0 / 100</div>
+            </div>
+            <div id="board"></div>
+            <button id="restart-btn">重新开始</button>
+            <button id="back-btn">返回选关</button>
+        </div>
+    </div>
+    <script src="../audio.js"></script>
+    <script src="../levels.js"></script>
+    <script src="../auth.js"></script>
+    <script src="../announcement.js"></script>
+    <script src="../script.js"></script>
+    <script>
+        // 在页面加载完成后检查并显示公告
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLoginStatus();
+            // 移除自动显示公告
+            document.getElementById('announcement-btn').addEventListener('click', showAnnouncement);
+        });
+    </script>
+</body>
+</html>
