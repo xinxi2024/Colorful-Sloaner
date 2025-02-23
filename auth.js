@@ -115,46 +115,28 @@ function checkLoginStatus() {
     const currentPath = window.location.pathname;
     
     // 如果用户已登录且在登录/注册页面，则重定向到游戏页面
-    if (currentUser && (currentPath.endsWith('login.html') || currentPath.endsWith('register.html') || currentPath === '/index.html')) {
-        window.location.href = 'game/game.html';
-        return;
+    if (currentUser) {
+        if (currentPath.endsWith('login.html') || 
+            currentPath.endsWith('register.html') || 
+            currentPath.endsWith('index.html') || 
+            currentPath === '/') {
+            window.location.href = './game/game.html';
+            return;
+        }
     }
     
     // 如果用户未登录且在游戏页面，则重定向到登录页面
-    if (!currentUser && currentPath.includes('game/')) {
+    if (!currentUser && currentPath.includes('/game/')) {
         window.location.href = '../index.html';
         return;
     }
 
-    // 如果在游戏页面，显示当前用户名
-    if (currentPath.includes('game/')) {
-        const userElement = document.getElementById('current-user');
-        const startScreenUserElement = document.getElementById('start-screen-user');
-        const currentUser = localStorage.getItem('currentUser');
-
-        if (userElement) {
-            userElement.textContent = `当前用户：${currentUser}`;
-        }
-
-        if (startScreenUserElement) {
-            startScreenUserElement.textContent = `当前用户：${currentUser}`;
-        }
-
-        // 添加登出按钮事件监听
-        const logoutBtn = document.getElementById('logout-btn');
-        const startScreenLogoutBtn = document.getElementById('start-screen-logout');
-
-        const handleLogout = () => {
-            localStorage.removeItem('currentUser');
-            window.location.href = '../index.html';
-        };
-
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', handleLogout);
-        }
-
-        if (startScreenLogoutBtn) {
-            startScreenLogoutBtn.addEventListener('click', handleLogout);
+    // 如果在游戏页面，设置用户界面元素
+    if (currentPath.includes('/game/')) {
+        // 添加用户头像点击事件
+        const userAvatar = document.getElementById('user-avatar');
+        if (userAvatar) {
+            userAvatar.addEventListener('click', toggleUserPanel);
         }
     }
 }
@@ -213,16 +195,18 @@ if (document.getElementById('register-btn')) {
 
 function handleLoginSuccess(username) {
     localStorage.setItem('currentUser', username);
-    // 清除上一次的页面状态，确保进入开始界面
     localStorage.removeItem('lastPageState');
-    window.location.href = 'game/game.html';
+    
+    // 使用相对路径
+    window.location.href = './game/game.html';
 }
 
 function handleRegisterSuccess(username) {
     localStorage.setItem('currentUser', username);
-    // 清除上一次的页面状态，确保进入开始界面
     localStorage.removeItem('lastPageState');
-    window.location.href = 'game/game.html';
+    
+    // 使用相对路径
+    window.location.href = './game/game.html';
 }
 
 // 页面加载完成后初始化音频
@@ -239,3 +223,84 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// 修改登出处理函数
+function handleLogout() {
+    // 清除所有相关的本地存储数据
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('lastPageState');
+    localStorage.removeItem('currentGroup');
+    
+    // 获取当前路径信息
+    const currentPath = window.location.pathname;
+    
+    // 确定重定向路径
+    let redirectPath;
+    if (currentPath.includes('/game/')) {
+        // 如果在游戏目录下，返回上一级
+        redirectPath = '../index.html';
+    } else {
+        // 如果在根目录，直接跳转到index.html
+        redirectPath = './index.html';
+    }
+    
+    // 使用相对路径进行重定向
+    window.location.href = redirectPath;
+}
+
+// 修改用户面板函数
+function toggleUserPanel() {
+    let userPanel = document.querySelector('.user-panel');
+    if (userPanel) {
+        userPanel.remove();
+        return;
+    }
+
+    const panel = document.createElement('div');
+    panel.className = 'user-panel';
+    
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) return;
+
+    const users = getAllUsers();
+    const userData = users[currentUser]?.data || initUserData();
+    
+    const totalScore = Object.values(userData.highScores || {}).reduce((a, b) => a + b, 0);
+    const maxScore = Object.values(userData.highScores || {}).reduce((a, b) => Math.max(a, b), 0);
+    
+    panel.innerHTML = `
+        <div class="user-info-content">
+            <h3>用户信息</h3>
+            <p>用户名：${currentUser}</p>
+            <p>已完成关卡：${userData.completedLevelsCount || 0}</p>
+            <p>总分：${totalScore}</p>
+            <p>最高分：${maxScore}</p>
+            <button class="logout-btn" onclick="handleLogout()">登出</button>
+        </div>
+    `;
+    
+    // 获取头像元素的位置
+    const avatar = document.getElementById('user-avatar');
+    const avatarRect = avatar.getBoundingClientRect();
+    
+    // 将面板添加到body中以避免定位问题
+    document.body.appendChild(panel);
+    
+    // 设置面板的位置
+    panel.style.position = 'absolute';
+    panel.style.top = `${avatarRect.bottom + 5}px`;
+    panel.style.left = `${avatarRect.left}px`;
+    panel.style.zIndex = '1000';
+
+    // 点击面板外区域关闭面板
+    document.addEventListener('click', function closePanel(e) {
+        if (!panel.contains(e.target) && e.target.id !== 'user-avatar') {
+            panel.remove();
+            document.removeEventListener('click', closePanel);
+        }
+    });
+}
+
+// 确保函数在全局范围内可用
+window.handleLogout = handleLogout;
+window.toggleUserPanel = toggleUserPanel;
