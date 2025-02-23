@@ -670,26 +670,20 @@ function renderBoard() {
     const fragment = document.createDocumentFragment();
     const size = currentLevel.gridSize;
     
-    // 设置网格大小和方块大小
-    boardElement.style.setProperty('--grid-size', size);
-    const defaultBlockSize = 60;
-    let blockSize = defaultBlockSize;
-    
-    if (currentLevel.blockSize) {
-        if (typeof currentLevel.blockSize === 'number') {
-            blockSize = currentLevel.blockSize;
-        } else if (typeof currentLevel.blockSize === 'object') {
-            if (currentLevel.blockSize.dynamic) {
-                blockSize = defaultBlockSize;
-            } else {
-                blockSize = Math.floor((currentLevel.blockSize.max + currentLevel.blockSize.min) / 2);
-            }
-        }
-    }
-    
-    boardElement.style.setProperty('--block-size', `${blockSize}px`);
+    // 清空棋盘
     boardElement.innerHTML = '';
     
+    // 计算合适的方块大小
+    const boardSize = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.7);
+    const blockSize = Math.floor((boardSize / size) - 4); // 减去间隔的大小
+    
+    // 设置棋盘大小和网格
+    boardElement.style.setProperty('--grid-size', size);
+    boardElement.style.setProperty('--block-size', `${blockSize}px`);
+    boardElement.style.width = `${size * (blockSize + 4)}px`;
+    boardElement.style.height = `${size * (blockSize + 4)}px`;
+    
+    // 渲染方块
     board.forEach((row, i) => {
         row.forEach((cell, j) => {
             const cellElement = document.createElement('div');
@@ -738,26 +732,18 @@ function renderBoard() {
                 });
             }
             
-            // 处理不规则大小
-            if (currentLevel.blockSize && typeof currentLevel.blockSize === 'object') {
-                if (currentLevel.blockSize.dynamic) {
-                    cellElement.classList.add('dynamic');
-                } else {
-                    const randomSize = Math.floor(
-                        Math.random() * 
-                        (currentLevel.blockSize.max - currentLevel.blockSize.min) + 
-                        currentLevel.blockSize.min
-                    );
-                    cellElement.style.setProperty('--block-size', `${randomSize}px`);
-                }
-            }
+            // 设置方块位置和大小
+            cellElement.style.width = `${blockSize}px`;
+            cellElement.style.height = `${blockSize}px`;
+            cellElement.style.left = `${j * (blockSize + 4)}px`;
+            cellElement.style.top = `${i * (blockSize + 4)}px`;
             
-            cellElement.style.setProperty('--block-index', i * size + j);
             cellElement.addEventListener('click', handleCellClick);
             fragment.appendChild(cellElement);
         });
     });
     
+    // 使用requestAnimationFrame优化渲染
     requestAnimationFrame(() => {
         boardElement.appendChild(fragment);
     });
@@ -892,7 +878,7 @@ async function eliminateMatches() {
     for (let i = 0; i < size; i++) {
         for (let j = 0; j < size; j++) {
             const cell = board[i][j];
-            if (typeof cell === 'object' && cell.type) {
+            if (cell && typeof cell === 'object' && cell.type) {
                 switch(cell.type) {
                     case SPECIAL_BLOCKS.BOMB:
                         // 消除3x3范围，基础分数更高
@@ -900,7 +886,7 @@ async function eliminateMatches() {
                             for (let dj = -1; dj <= 1; dj++) {
                                 const ni = i + di;
                                 const nj = j + dj;
-                                if (ni >= 0 && ni < size && nj >= 0 && nj < size) {
+                                if (ni >= 0 && ni < size && nj >= 0 && nj < size && board[ni][nj]) {
                                     toEliminate.add(`${ni},${nj}`);
                                 }
                             }
@@ -909,8 +895,8 @@ async function eliminateMatches() {
                     case SPECIAL_BLOCKS.LIGHTNING:
                         // 消除整行和整列，基础分数最高
                         for (let k = 0; k < size; k++) {
-                            toEliminate.add(`${i},${k}`); // 整行
-                            toEliminate.add(`${k},${j}`); // 整列
+                            if (board[i][k]) toEliminate.add(`${i},${k}`); // 整行
+                            if (board[k][j]) toEliminate.add(`${k},${j}`); // 整列
                         }
                         break;
                     case SPECIAL_BLOCKS.RAINBOW:
@@ -919,9 +905,11 @@ async function eliminateMatches() {
                         for (let ni = 0; ni < size; ni++) {
                             for (let nj = 0; nj < size; nj++) {
                                 const neighborCell = board[ni][nj];
-                                const neighborColor = typeof neighborCell === 'object' ? neighborCell.color : neighborCell;
-                                if (neighborColor === targetColor) {
-                                    toEliminate.add(`${ni},${nj}`);
+                                if (neighborCell) {
+                                    const neighborColor = typeof neighborCell === 'object' ? neighborCell.color : neighborCell;
+                                    if (neighborColor === targetColor) {
+                                        toEliminate.add(`${ni},${nj}`);
+                                    }
                                 }
                             }
                         }
@@ -938,6 +926,8 @@ async function eliminateMatches() {
             const cell1 = board[i][j];
             const cell2 = board[i][j+1];
             const cell3 = board[i][j+2];
+            if (!cell1 || !cell2 || !cell3) continue;
+            
             const color1 = typeof cell1 === 'object' ? cell1.color : cell1;
             const color2 = typeof cell2 === 'object' ? cell2.color : cell2;
             const color3 = typeof cell3 === 'object' ? cell3.color : cell3;
@@ -956,6 +946,8 @@ async function eliminateMatches() {
             const cell1 = board[i][j];
             const cell2 = board[i+1][j];
             const cell3 = board[i+2][j];
+            if (!cell1 || !cell2 || !cell3) continue;
+            
             const color1 = typeof cell1 === 'object' ? cell1.color : cell1;
             const color2 = typeof cell2 === 'object' ? cell2.color : cell2;
             const color3 = typeof cell3 === 'object' ? cell3.color : cell3;
@@ -969,7 +961,7 @@ async function eliminateMatches() {
     }
     
     if (toEliminate.size > 0) {
-        isAnimating = true; // 设置动画状态
+        isAnimating = true;
         
         // 播放消除音效
         playSound('match');
@@ -1015,14 +1007,17 @@ async function eliminateMatches() {
         score += finalPoints;
         updateGameInfo();
         
+        // 渲染并等待填充完成
+        renderBoard();
+        await fillBoard();
+        
         // 在动画完成后再检查游戏结束
         if (!isGameEnding) {
             checkGameEnd();
         }
         
-        isAnimating = false; // 重置动画状态
+        isAnimating = false;
     } else {
-        // 如果没有可消除的方块，重置连击计数
         comboCount = 0;
     }
 }
@@ -1091,64 +1086,51 @@ function showScoreAnimation(points, row, col) {
 }
 
 async function fillBoard() {
-    if (isGameEnding) return; // 如果游戏正在结束，不执行填充
+    if (isGameEnding) return;
     
     isAnimating = true;
     const size = currentLevel.gridSize;
-    const boardElement = document.getElementById('board');
+    let hasChanges;
     
-    // 记录需要填充的空位置
-    const emptyPositions = [];
-    const fallingBlocks = [];
-    
-    // 第一步：收集所有空位置和可以下落的方块
-    for (let j = 0; j < size; j++) {
+    do {
+        hasChanges = false;
+        // 从下往上、从左往右遍历
         for (let i = size - 1; i >= 0; i--) {
-            if (board[i][j] === null) {
-                // 从当前位置向上查找可以下落的方块
-                let foundBlock = false;
-                for (let k = i - 1; k >= 0; k--) {
-                    if (board[k][j] !== null) {
-                        fallingBlocks.push({
-                            fromRow: k,
-                            fromCol: j,
-                            toRow: i,
-                            toCol: j,
-                            value: board[k][j]
-                        });
-                        board[k][j] = null;
-                        foundBlock = true;
-                        break;
+            for (let j = 0; j < size; j++) {
+                if (board[i][j] === null) {
+                    // 找到上方最近的非空方块
+                    let k = i - 1;
+                    while (k >= 0 && board[k][j] === null) {
+                        k--;
                     }
-                }
-                if (!foundBlock) {
-                    emptyPositions.push({ row: i, col: j });
+                    
+                    if (k >= 0) {
+                        // 找到了上方的方块，进行下落
+                        board[i][j] = board[k][j];
+                        board[k][j] = null;
+                        hasChanges = true;
+                    } else {
+                        // 没有找到上方的方块，生成新方块
+                        const randomIndex = Math.floor(Math.random() * currentLevel.colors.length);
+                        board[i][j] = currentLevel.colors[randomIndex];
+                        hasChanges = true;
+                    }
                 }
             }
         }
-    }
+        
+        if (hasChanges) {
+            renderBoard();
+            // 等待一小段时间让动画显示
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+    } while (hasChanges);
     
-    // 第二步：更新数据，但还不渲染
-    fallingBlocks.forEach(block => {
-        board[block.toRow][block.toCol] = block.value;
-    });
-    
-    // 第三步：填充新方块
-    emptyPositions.forEach(pos => {
-        const randomIndex = Math.floor(Math.random() * currentLevel.colors.length);
-        board[pos.row][pos.col] = currentLevel.colors[randomIndex];
-    });
-    
-    // 第四步：渲染新的棋盘状态
-    renderBoard();
-    
-    // 等待动画完成
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // 第五步：检查是否有可消除的组合
     isAnimating = false;
-    if (!isGameEnding && checkMatches()) {
-        eliminateMatches();
+    
+    // 检查是否有新的可消除组合
+    if (checkMatches()) {
+        await eliminateMatches();
     }
 }
 
