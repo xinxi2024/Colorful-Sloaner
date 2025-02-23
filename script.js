@@ -919,7 +919,6 @@ async function eliminateMatches() {
         }
     }
     
-    // 原有的消除检测逻辑
     // 横向检测
     for (let i = 0; i < size; i++) {
         for (let j = 0; j < size - 2; j++) {
@@ -975,6 +974,10 @@ async function eliminateMatches() {
         // 计算最终得分
         const finalPoints = Math.floor(basePoints * (1 + comboBonus));
         
+        // 更新分数（在消除动画开始前）
+        score += finalPoints;
+        updateGameInfo();
+        
         // 显示加分动画
         const centerCoord = Array.from(toEliminate)[Math.floor(toEliminate.size / 2)];
         const [centerRow, centerCol] = centerCoord.split(',').map(Number);
@@ -1003,9 +1006,6 @@ async function eliminateMatches() {
         
         // 等待所有消除动画完成
         await Promise.all(promises);
-        
-        score += finalPoints;
-        updateGameInfo();
         
         // 渲染并等待填充完成
         renderBoard();
@@ -1649,8 +1649,16 @@ async function eliminateCell(row, col) {
             await new Promise(resolve => setTimeout(resolve, 300));
         }
         board[row][col] = null;
+        
+        // 添加得分（单个方块消除得2分）
+        score += 2;
+        updateGameInfo();
+        
         renderBoard();
         playSound('match');
+        
+        // 显示得分动画
+        showScoreAnimation(2, row, col);
     }
 }
 
@@ -1672,8 +1680,8 @@ async function eliminateCross(row, col) {
     }
     
     if (toEliminate.size > 0) {
-        // 计算得分
-        let basePoints = Math.floor(toEliminate.size * 0.5);
+        // 计算得分（每个方块2分）
+        let basePoints = toEliminate.size * 2;
         showScoreAnimation(basePoints, row, col);
         
         // 添加消除动画
@@ -1688,7 +1696,7 @@ async function eliminateCross(row, col) {
         // 等待动画完成
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        // 更新棋盘
+        // 更新棋盘和分数
         toEliminate.forEach(coord => {
             const [r, c] = coord.split(',').map(Number);
             board[r][c] = null;
@@ -1720,8 +1728,8 @@ async function eliminateColor(color) {
     }
     
     if (toEliminate.size > 0) {
-        // 计算得分
-        let basePoints = Math.floor(toEliminate.size * 0.5);
+        // 计算得分（每个方块2分）
+        let basePoints = toEliminate.size * 2;
         const firstCoord = Array.from(toEliminate)[0];
         const [centerRow, centerCol] = firstCoord.split(',').map(Number);
         showScoreAnimation(basePoints, centerRow, centerCol);
@@ -1738,7 +1746,7 @@ async function eliminateColor(color) {
         // 等待动画完成
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        // 更新棋盘
+        // 更新棋盘和分数
         toEliminate.forEach(coord => {
             const [r, c] = coord.split(',').map(Number);
             board[r][c] = null;
