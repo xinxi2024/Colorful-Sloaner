@@ -20,12 +20,6 @@ const achievements = {
         description: '完成第一个关卡',
         icon: '🌟'
     },
-    expert: {
-        id: 'expert',
-        name: '消除专家',
-        description: '在一次消除中连接5个或更多方块',
-        icon: '⭐'
-    },
     master: {
         id: 'master',
         name: '消除大师',
@@ -37,12 +31,6 @@ const achievements = {
         name: '闪电手',
         description: '在30秒内完成一个关卡',
         icon: '⚡'
-    },
-    perfectionist: {
-        id: 'perfectionist',
-        name: '完美主义者',
-        description: '获得3个满分关卡',
-        icon: '💎'
     },
     persistent: {
         id: 'persistent',
@@ -139,6 +127,12 @@ const achievements = {
         name: '挑战之巅',
         description: '完成第29关',
         icon: '🌠'
+    },
+    level_18_master: {
+        id: 'level_18_master',
+        name: '进阶挑战者',
+        description: '完成第18关',
+        icon: '🎮'
     }
 };
 
@@ -1352,7 +1346,8 @@ function loadUserData() {
                 challenge_conqueror: true,
                 master_elite: true,
                 legend_supreme: true,
-                challenge_master_29: true
+                challenge_master_29: true,
+                level_18_master: true
             },
             perfectLevels: 50,
             totalScore: 999999,
@@ -1601,6 +1596,12 @@ function checkAchievements(userData, levelId, score, timeSpent) {
     if (!userData.achievements.challenge_master_29 && userData.completedLevels.includes(29)) {
         userData.achievements.challenge_master_29 = true;
         newAchievements.push(achievements.challenge_master_29);
+    }
+    
+    // 检查第18关特殊成就
+    if (!userData.achievements.level_18_master && userData.completedLevels.includes(18)) {
+        userData.achievements.level_18_master = true;
+        newAchievements.push(achievements.level_18_master);
     }
     
     // 保存更新后的用户数据
