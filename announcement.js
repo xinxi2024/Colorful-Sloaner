@@ -1,7 +1,7 @@
 // 游戏公告系统
 
 const gameAnnouncement = {
-    version: 'v1.1',
+    version: 'v1.10',
     content: [
         "1.优化各类特殊方块特效",
         "2.优化游戏性能",

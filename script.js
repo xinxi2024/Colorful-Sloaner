@@ -1326,51 +1326,69 @@ function initUser() {
 }
 
 function loadUserData() {
-    const defaultData = {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) return null;
+
+    const users = getAllUsers();
+    const userData = users[currentUser]?.data;
+    
+    // 如果是管理员账号，确保所有关卡都解锁
+    if (currentUser === 'adminx') {
+        return {
+            username: 'adminx',
+            isAdmin: true,
+            completedLevels: Array.from({length: 50}, (_, i) => i + 1),
+            completedLevelsCount: 50,
+            highScores: {},
+            levelAttempts: {},
+            achievements: {
+                novice: true,
+                master: true,
+                speedster: true,
+                perfectionist: true,
+                persistent: true,
+                rookie_master: true,
+                advanced_champion: true,
+                challenge_conqueror: true,
+                master_elite: true,
+                legend_supreme: true,
+                challenge_master_29: true
+            },
+            perfectLevels: 50,
+            totalScore: 999999,
+            items: {
+                shuffle: 99,
+                colorBomb: 99,
+                hammer: 99,
+                cross: 99
+            },
+            usedItems: {}
+        };
+    }
+
+    return userData || {
         completedLevels: [],
         completedLevelsCount: 0,
         highScores: {},
         levelAttempts: {},
-        achievements: [],
-        items: {
-            hammer: 3,
-            bomb: 3,
-            shuffle: 3,
-            hint: 3
-        }
+        achievements: {},
+        items: {},
+        usedItems: {}
     };
-    
-    try {
-        const savedData = JSON.parse(localStorage.getItem('userData')) || defaultData;
-        // 确保所有必要的字段都存在
-        return {
-            ...defaultData,
-            ...savedData,
-            completedLevels: savedData.completedLevels || defaultData.completedLevels,
-            completedLevelsCount: savedData.completedLevelsCount || defaultData.completedLevelsCount,
-            highScores: savedData.highScores || defaultData.highScores,
-            levelAttempts: savedData.levelAttempts || defaultData.levelAttempts,
-            achievements: savedData.achievements || defaultData.achievements,
-            items: savedData.items || defaultData.items
-        };
-    } catch (error) {
-        console.error('加载用户数据时出错：', error);
-        return defaultData;
-    }
 }
 
 function saveUserData(userData) {
-    try {
-        // 确保数据完整性
-        const dataToSave = {
-            ...loadUserData(), // 获取现有数据作为基础
-            ...userData,       // 使用新数据覆盖
-            completedLevelsCount: userData.completedLevels.length // 确保计数正确
-        };
-        localStorage.setItem('userData', JSON.stringify(dataToSave));
-        console.log('用户数据已保存：', dataToSave); // 添加调试日志
-    } catch (error) {
-        console.error('保存用户数据时出错：', error);
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) return;
+
+    // 如果是管理员账号，不保存数据
+    if (currentUser === 'adminx') return;
+
+    const users = getAllUsers();
+    if (users[currentUser]) {
+        users[currentUser].data = userData;
+        saveAllUsers(users);
+        console.log('用户数据已保存：', userData);
     }
 }
 

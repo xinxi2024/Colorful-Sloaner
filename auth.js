@@ -23,37 +23,38 @@ function getAllUsers() {
     // 检查是否需要初始化管理员账户
     if (!parsedUsers['adminx']) {
         // 创建管理员数据
-        const adminData = initUserData();
-        adminData.username = 'adminx';
-        adminData.isAdmin = true;
-        
-        // 解锁所有关卡（1-50）
-        adminData.completedLevels = Array.from({length: 50}, (_, i) => i + 1);
-        adminData.completedLevelsCount = 50;
-        
-        // 解锁所有成就
-        adminData.achievements = {
-            novice: true,
-            master: true,
-            speedster: true,
-            perfectionist: true,
-            persistent: true,
-            rookie_master: true,
-            advanced_champion: true,
-            challenge_conqueror: true,
-            master_elite: true,
-            legend_supreme: true,
-            challenge_master_29: true
-        };
-        
-        // 设置完美关卡数和总分
-        adminData.perfectLevels = 50;
-        adminData.totalScore = 999999;
-        
-        // 添加管理员账户
         parsedUsers['adminx'] = {
             password: 'adminx',
-            data: adminData
+            data: {
+                username: 'adminx',
+                isAdmin: true,
+                completedLevels: Array.from({length: 50}, (_, i) => i + 1),
+                completedLevelsCount: 50,
+                highScores: {},
+                levelAttempts: {},
+                achievements: {
+                    novice: true,
+                    master: true,
+                    speedster: true,
+                    perfectionist: true,
+                    persistent: true,
+                    rookie_master: true,
+                    advanced_champion: true,
+                    challenge_conqueror: true,
+                    master_elite: true,
+                    legend_supreme: true,
+                    challenge_master_29: true
+                },
+                perfectLevels: 50,
+                totalScore: 999999,
+                items: {
+                    shuffle: 99,
+                    colorBomb: 99,
+                    hammer: 99,
+                    cross: 99
+                },
+                usedItems: {}
+            }
         };
         
         // 保存更新后的用户数据
