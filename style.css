@@ -1183,37 +1183,6 @@ button:hover {
     100% { transform: translate(-50%, -50%) scale(1); }
 }
 
-@keyframes rainbowShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-@keyframes magicGlow {
-    from { box-shadow: 0 0 15px rgba(233, 30, 99, 0.6); }
-    to { box-shadow: 0 0 25px rgba(156, 39, 176, 0.8); }
-}
-
-/* 特殊方块消除效果 */
-.cell[data-special].matched {
-    animation: specialEliminate 0.5s ease-out;
-}
-
-@keyframes specialEliminate {
-    0% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.5);
-        opacity: 0.8;
-    }
-    100% {
-        transform: scale(0);
-        opacity: 0;
-    }
-}
-
 /* 特殊方块和道具说明样式 */
 .special-block-info {
     background: rgba(255, 255, 255, 0.95);
@@ -1321,7 +1290,7 @@ button:hover {
     letter-spacing: 2px;
 }
 
-/* 更新道具栏样式 */
+/* 道具栏样式 */
 .items-bar {
     display: flex;
     justify-content: center;
@@ -1333,7 +1302,7 @@ button:hover {
     flex: 1;
 }
 
-/* 更新道具按钮样式 */
+/* 道具按钮样式 */
 .item-button {
     position: relative;
     width: 60px;
@@ -1413,6 +1382,93 @@ button:hover {
 .board.using-item .cell:hover {
     transform: scale(1.1);
     box-shadow: 0 0 15px rgba(52, 152, 219, 0.5);
+}
+
+/* 保留特殊方块消除效果 */
+.cell[data-special="bomb"].matched {
+    animation: explode 0.5s ease-out forwards;
+}
+
+.cell[data-special="lightning"].matched {
+    animation: lightning 0.5s ease-out forwards;
+}
+
+.cell[data-special="rainbow"].matched {
+    animation: rainbowEliminate 0.5s ease-out forwards;
+}
+
+.cell[data-special="magic"].matched {
+    animation: magicEliminate 0.5s ease-out forwards;
+}
+
+/* 特殊方块消除动画效果 */
+@keyframes explode {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(2);
+        opacity: 0.8;
+        box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes lightning {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    25% {
+        transform: scale(1.2);
+        opacity: 0.9;
+        box-shadow: 0 0 30px rgba(255, 235, 59, 0.8);
+    }
+    50% {
+        transform: scale(1);
+        opacity: 0.8;
+        box-shadow: 0 0 50px rgba(255, 235, 59, 1);
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes rainbowEliminate {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0.8;
+        filter: hue-rotate(180deg) brightness(1.5);
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes magicEliminate {
+    0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.5) rotate(180deg);
+        opacity: 0.8;
+        box-shadow: 0 0 30px rgba(156, 39, 176, 0.8);
+    }
+    100% {
+        transform: scale(0) rotate(360deg);
+        opacity: 0;
+    }
 }
 
 /* 移动端响应式布局 */

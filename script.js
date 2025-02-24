@@ -774,46 +774,85 @@ function isAdjacent(row1, col1, row2, col2) {
 let selectedCells = [];
 
 function handleCellClick(event) {
-    if (isAnimating || (!currentLevel.timeLimit && movesLeft <= 0)) return;
+    if (isAnimating) {
+        console.log('动画进行中，不允许点击');
+        return;
+    }
+    
+    if (!currentLevel.timeLimit && movesLeft <= 0) {
+        console.log('步数用完，不允许点击');
+        return;
+    }
     
     const cell = event.target.closest('.cell');
+    if (!cell) {
+        console.log('无效的点击目标');
+        return;
+    }
+
     const row = parseInt(cell.dataset.row);
     const col = parseInt(cell.dataset.col);
+    
+    // 检查位置是否有效
+    if (isNaN(row) || isNaN(col) || row < 0 || col < 0 || 
+        row >= currentLevel.gridSize || col >= currentLevel.gridSize) {
+        console.log('无效的方块位置');
+        return;
+    }
+    
+    // 检查方块是否为空
+    if (!board[row][col]) {
+        console.log('空方块，不允许点击');
+        return;
+    }
     
     if (selectedCells.length === 0) {
         // 第一次选中
         cell.classList.add('selected');
         selectedCells.push({ row, col, element: cell });
+        console.log('选中第一个方块:', row, col);
     } else {
         const firstCell = selectedCells[0];
         
+        // 检查第一个选中的方块是否仍然有效
+        if (!board[firstCell.row][firstCell.col]) {
+            console.log('第一个选中的方块已失效');
+            selectedCells = [];
+            return;
+        }
+        
         // 检查是否相邻或者是否有魔法方块
         const isFirstCellMagic = typeof board[firstCell.row][firstCell.col] === 'object' && 
-                                board[firstCell.row][firstCell.col].type === SPECIAL_BLOCKS.MAGIC;
+                                board[firstCell.row][firstCell.col]?.type === SPECIAL_BLOCKS.MAGIC;
         const isSecondCellMagic = typeof board[row][col] === 'object' && 
-                                 board[row][col].type === SPECIAL_BLOCKS.MAGIC;
+                                 board[row][col]?.type === SPECIAL_BLOCKS.MAGIC;
         
         if (isAdjacent(firstCell.row, firstCell.col, row, col) || isFirstCellMagic || isSecondCellMagic) {
+            console.log('尝试交换方块');
             // 播放交换音效
             playSound('swap');
             
             // 交换方块
-            swapCells(firstCell.row, firstCell.col, row, col).then(() => {
-                // 更新步数
-                if (!currentLevel.timeLimit) {
-                    movesLeft--;
-                }
-                updateGameInfo();
-                
-                // 检查是否有可消除的方块
-                if (checkMatches()) {
-                    // 播放消除音效
-                    playSound('match');
-                    eliminateMatches();
-                    setTimeout(() => fillBoard(), 300);
+            swapCells(firstCell.row, firstCell.col, row, col).then(async (swapSuccessful) => {
+                if (swapSuccessful) {
+                    // 更新步数
+                    if (!currentLevel.timeLimit) {
+                        movesLeft--;
+                    }
+                    updateGameInfo();
+                    
+                    // 检查是否有可消除的方块
+                    if (checkMatches()) {
+                        // 播放消除音效
+                        playSound('match');
+                        await eliminateMatches();
+                    }
                 }
             });
+        } else {
+            console.log('方块不相邻且没有魔法方块');
         }
+        
         // 清除选中状态
         firstCell.element.classList.remove('selected');
         selectedCells = [];
@@ -826,7 +865,18 @@ async function swapCells(row1, col1, row2, col2) {
     const cell1 = document.querySelector(`[data-row="${row1}"][data-col="${col1}"]`);
     const cell2 = document.querySelector(`[data-row="${row2}"][data-col="${col2}"]`);
     
-    if (!cell1 || !cell2) return;
+    if (!cell1 || !cell2) return false;
+    
+    // 检查是否有魔法方块参与交换
+    const isFirstCellMagic = typeof board[row1][col1] === 'object' && 
+                            board[row1][col1]?.type === SPECIAL_BLOCKS.MAGIC;
+    const isSecondCellMagic = typeof board[row2][col2] === 'object' && 
+                             board[row2][col2]?.type === SPECIAL_BLOCKS.MAGIC;
+    const hasMagicBlock = isFirstCellMagic || isSecondCellMagic;
+    
+    // 添加交换动画类
+    cell1.classList.add('swapping');
+    cell2.classList.add('swapping');
     
     // 保存原始位置
     const rect1 = cell1.getBoundingClientRect();
@@ -840,40 +890,97 @@ async function swapCells(row1, col1, row2, col2) {
     cell1.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
     cell2.style.transform = `translate(${-deltaX}px, ${-deltaY}px)`;
     
-    // 等待动画完成
+    // 等待交换动画完成
     await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // 移除交换动画类
+    cell1.classList.remove('swapping');
+    cell2.classList.remove('swapping');
     
     // 交换数据
     const temp = board[row1][col1];
     board[row1][col1] = board[row2][col2];
     board[row2][col2] = temp;
     
-    // 使用 requestAnimationFrame 优化渲染
-    requestAnimationFrame(() => {
+    // 渲染新状态
+    renderBoard();
+    
+    // 等待渲染完成
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // 检查是否有可消除的组合
+    const hasMatches = checkMatches();
+    console.log('交换后检查匹配:', hasMatches);
+    
+    // 如果有魔法方块参与，允许无消除交换
+    if (!hasMatches && !hasMagicBlock) {
+        // 如果没有匹配且不是魔法方块，交换回来
+        console.log('没有匹配且不是魔法方块，交换回来');
+        
+        // 添加交换动画类
+        cell1.classList.add('swapping');
+        cell2.classList.add('swapping');
+        
+        // 交换回来
+        const tempBack = board[row1][col1];
+        board[row1][col1] = board[row2][col2];
+        board[row2][col2] = temp;
+        
+        // 渲染并等待动画完成
         renderBoard();
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // 移除交换动画类
+        cell1.classList.remove('swapping');
+        cell2.classList.remove('swapping');
+        
         isAnimating = false;
-    });
+        return false;
+    }
+    
+    isAnimating = false;
+    return true;
 }
 
 function checkMatches() {
     const size = currentLevel.gridSize;
+    let hasMatches = false;
+    
+    // 获取方块的颜色
+    function getColor(cell) {
+        if (!cell) return null;
+        return typeof cell === 'object' ? cell.color : cell;
+    }
+    
     // 横向检测
     for (let i = 0; i < size; i++) {
         for (let j = 0; j < size - 2; j++) {
-            if (board[i][j] && board[i][j] === board[i][j+1] && board[i][j] === board[i][j+2]) {
-                return true;
+            const color1 = getColor(board[i][j]);
+            const color2 = getColor(board[i][j + 1]);
+            const color3 = getColor(board[i][j + 2]);
+            
+            if (color1 && color2 && color3 && color1 === color2 && color2 === color3) {
+                console.log('找到横向匹配:', i, j, color1, color2, color3);
+                hasMatches = true;
             }
         }
     }
+    
     // 纵向检测
     for (let j = 0; j < size; j++) {
         for (let i = 0; i < size - 2; i++) {
-            if (board[i][j] && board[i][j] === board[i+1][j] && board[i][j] === board[i+2][j]) {
-                return true;
+            const color1 = getColor(board[i][j]);
+            const color2 = getColor(board[i + 1][j]);
+            const color3 = getColor(board[i + 2][j]);
+            
+            if (color1 && color2 && color3 && color1 === color2 && color2 === color3) {
+                console.log('找到纵向匹配:', i, j, color1, color2, color3);
+                hasMatches = true;
             }
         }
     }
-    return false;
+    
+    return hasMatches;
 }
 
 async function eliminateMatches() {
@@ -882,6 +989,12 @@ async function eliminateMatches() {
     let toEliminate = new Set();
     const size = currentLevel.gridSize;
     const now = Date.now();
+    
+    // 获取方块的颜色
+    function getColor(cell) {
+        if (!cell) return null;
+        return typeof cell === 'object' ? cell.color : cell;
+    }
     
     // 检查是否为连击（2秒内的消除视为连击）
     if (now - lastEliminateTime < 2000) {
@@ -898,7 +1011,7 @@ async function eliminateMatches() {
             if (cell && typeof cell === 'object' && cell.type) {
                 switch(cell.type) {
                     case SPECIAL_BLOCKS.BOMB:
-                        // 消除3x3范围，基础分数更高
+                        // 消除3x3范围
                         for (let di = -1; di <= 1; di++) {
                             for (let dj = -1; dj <= 1; dj++) {
                                 const ni = i + di;
@@ -910,10 +1023,10 @@ async function eliminateMatches() {
                         }
                         break;
                     case SPECIAL_BLOCKS.LIGHTNING:
-                        // 消除整行和整列，基础分数最高
+                        // 消除整行和整列
                         for (let k = 0; k < size; k++) {
-                            if (board[i][k]) toEliminate.add(`${i},${k}`); // 整行
-                            if (board[k][j]) toEliminate.add(`${k},${j}`); // 整列
+                            if (board[i][k]) toEliminate.add(`${i},${k}`);
+                            if (board[k][j]) toEliminate.add(`${k},${j}`);
                         }
                         break;
                     case SPECIAL_BLOCKS.RAINBOW:
@@ -921,12 +1034,8 @@ async function eliminateMatches() {
                         const targetColor = cell.color;
                         for (let ni = 0; ni < size; ni++) {
                             for (let nj = 0; nj < size; nj++) {
-                                const neighborCell = board[ni][nj];
-                                if (neighborCell) {
-                                    const neighborColor = typeof neighborCell === 'object' ? neighborCell.color : neighborCell;
-                                    if (neighborColor === targetColor) {
-                                        toEliminate.add(`${ni},${nj}`);
-                                    }
+                                if (getColor(board[ni][nj]) === targetColor) {
+                                    toEliminate.add(`${ni},${nj}`);
                                 }
                             }
                         }
@@ -939,16 +1048,11 @@ async function eliminateMatches() {
     // 横向检测
     for (let i = 0; i < size; i++) {
         for (let j = 0; j < size - 2; j++) {
-            const cell1 = board[i][j];
-            const cell2 = board[i][j+1];
-            const cell3 = board[i][j+2];
-            if (!cell1 || !cell2 || !cell3) continue;
+            const color1 = getColor(board[i][j]);
+            const color2 = getColor(board[i][j + 1]);
+            const color3 = getColor(board[i][j + 2]);
             
-            const color1 = typeof cell1 === 'object' ? cell1.color : cell1;
-            const color2 = typeof cell2 === 'object' ? cell2.color : cell2;
-            const color3 = typeof cell3 === 'object' ? cell3.color : cell3;
-            
-            if (color1 && color1 === color2 && color1 === color3) {
+            if (color1 && color2 && color3 && color1 === color2 && color2 === color3) {
                 toEliminate.add(`${i},${j}`);
                 toEliminate.add(`${i},${j+1}`);
                 toEliminate.add(`${i},${j+2}`);
@@ -959,16 +1063,11 @@ async function eliminateMatches() {
     // 纵向检测
     for (let j = 0; j < size; j++) {
         for (let i = 0; i < size - 2; i++) {
-            const cell1 = board[i][j];
-            const cell2 = board[i+1][j];
-            const cell3 = board[i+2][j];
-            if (!cell1 || !cell2 || !cell3) continue;
+            const color1 = getColor(board[i][j]);
+            const color2 = getColor(board[i + 1][j]);
+            const color3 = getColor(board[i + 2][j]);
             
-            const color1 = typeof cell1 === 'object' ? cell1.color : cell1;
-            const color2 = typeof cell2 === 'object' ? cell2.color : cell2;
-            const color3 = typeof cell3 === 'object' ? cell3.color : cell3;
-            
-            if (color1 && color1 === color2 && color1 === color3) {
+            if (color1 && color2 && color3 && color1 === color2 && color2 === color3) {
                 toEliminate.add(`${i},${j}`);
                 toEliminate.add(`${i+1},${j}`);
                 toEliminate.add(`${i+2},${j}`);
@@ -1003,19 +1102,32 @@ async function eliminateMatches() {
             const [row, col] = coord.split(',').map(Number);
             const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
             if (cell) {
-                cell.classList.add('matched');
-                promises.push(new Promise(resolve => {
-                    cell.addEventListener('animationend', resolve, {once: true});
-                }));
+                // 根据方块类型添加不同的消除动画类
+                if (typeof board[row][col] === 'object' && board[row][col].type) {
+                    cell.classList.add('matched');
+                    // 特殊方块的消除动画时间更长
+                    promises.push(new Promise(resolve => setTimeout(resolve, 500)));
+                } else {
+                    cell.classList.add('matched');
+                    promises.push(new Promise(resolve => {
+                        cell.addEventListener('animationend', resolve, {once: true});
+                    }));
+                }
             }
-            board[row][col] = null;
         });
         
         // 等待所有动画完成
         await Promise.all(promises);
         
+        // 更新棋盘状态
+        toEliminate.forEach(coord => {
+            const [row, col] = coord.split(',').map(Number);
+            board[row][col] = null;
+        });
+        
         // 渲染并等待填充完成
         renderBoard();
+        await new Promise(resolve => setTimeout(resolve, 100));
         await fillBoard();
         
         // 在所有动画和填充完成后检查游戏结束
@@ -1099,16 +1211,20 @@ async function fillBoard() {
     isAnimating = true;
     const size = currentLevel.gridSize;
     let hasChanges;
+    let attempts = 0;
+    const maxAttempts = 10; // 防止无限循环
     
     do {
         hasChanges = false;
+        attempts++;
+        
         // 从下往上、从左往右遍历
         for (let i = size - 1; i >= 0; i--) {
             for (let j = 0; j < size; j++) {
-                if (board[i][j] === null) {
+                if (!board[i][j]) {
                     // 找到上方最近的非空方块
                     let k = i - 1;
-                    while (k >= 0 && board[k][j] === null) {
+                    while (k >= 0 && !board[k][j]) {
                         k--;
                     }
                     
@@ -1119,8 +1235,7 @@ async function fillBoard() {
                         hasChanges = true;
                     } else {
                         // 没有找到上方的方块，生成新方块
-                        const randomIndex = Math.floor(Math.random() * currentLevel.colors.length);
-                        board[i][j] = currentLevel.colors[randomIndex];
+                        board[i][j] = currentLevel.colors[Math.floor(Math.random() * currentLevel.colors.length)];
                         hasChanges = true;
                     }
                 }
@@ -1132,8 +1247,10 @@ async function fillBoard() {
             // 等待一小段时间让动画显示
             await new Promise(resolve => setTimeout(resolve, 100));
         }
-    } while (hasChanges);
+    } while (hasChanges && attempts < maxAttempts);
     
+    // 确保所有动画和状态更新完成后再重置动画状态
+    await new Promise(resolve => setTimeout(resolve, 100));
     isAnimating = false;
     
     // 检查是否有新的可消除组合

@@ -105,7 +105,7 @@ const levels = [
         timeLimit: null
     },
 
-    // 进阶区 (11-20) - 方块大小 50x50，7x7 网格
+    // 进阶区 (11-20) - 统一方块大小
     {
         id: 11,
         name: "11、进阶入门",
@@ -113,7 +113,7 @@ const levels = [
         moves: 25,
         colors: [1, 2, 3, 4, 5],
         gridSize: 7,
-        blockSize: 50,
+        blockSize: 60,
         description: "进入进阶区，更紧凑的布局",
         timeLimit: null,
         features: {
@@ -212,7 +212,7 @@ const levels = [
         timeLimit: null
     },
 
-    // 挑战区 (21-30) - 方块大小不规则 45x45 到 55x55，8x8 网格
+    // 挑战区 (21-30) - 统一方块大小
     {
         id: 21,
         name: "21、挑战开始",
@@ -220,16 +220,12 @@ const levels = [
         moves: 35,
         colors: [1, 2, 3, 4, 5, 6],
         gridSize: 8,
-        blockSize: {
-            min: 45,
-            max: 55
-        },
+        blockSize: 60,
         description: "进入挑战区，更大的棋盘",
         timeLimit: null,
         features: {
             basic: true,
-            shrink: true,
-            irregular: true
+            shrink: true
         }
     },
     {
@@ -323,7 +319,7 @@ const levels = [
         timeLimit: null
     },
 
-    // 大师区 (31-40) - 方块大小 40x40，9x9 网格
+    // 大师区 (31-40) - 统一方块大小
     {
         id: 31,
         name: "31、大师之路",
@@ -331,15 +327,12 @@ const levels = [
         moves: 45,
         colors: [1, 2, 3, 4, 5, 6],
         gridSize: 9,
-        blockSize: 40,
+        blockSize: 60,
         description: "进入大师区，9x9网格",
         timeLimit: null,
         features: {
             basic: true,
-            shrink: true,
-            irregular: true,
-            rotate: true,
-            pulse: true
+            shrink: true
         }
     },
     {
@@ -433,7 +426,7 @@ const levels = [
         timeLimit: null
     },
 
-    // 传说区 (41-50) - 方块大小动态变化 35x35 到 60x60，10x10 网格
+    // 传说区 (41-50) - 统一方块大小
     {
         id: 41,
         name: "41、传说之始",
@@ -441,21 +434,12 @@ const levels = [
         moves: 55,
         colors: [1, 2, 3, 4, 5, 6],
         gridSize: 10,
-        blockSize: {
-            min: 35,
-            max: 60,
-            dynamic: true
-        },
+        blockSize: 60,
         description: "进入传说区，10x10网格",
         timeLimit: null,
         features: {
             basic: true,
-            shrink: true,
-            irregular: true,
-            rotate: true,
-            pulse: true,
-            dynamic: true,
-            fade: true
+            shrink: true
         }
     },
     {
