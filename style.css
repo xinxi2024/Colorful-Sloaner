@@ -1168,8 +1168,17 @@ button:hover {
 }
 
 .cell[data-special="rainbow"] {
-    background: #ff1493;
-    box-shadow: 0 0 10px rgba(255, 20, 147, 0.5);
+    background: linear-gradient(
+        45deg,
+        #ff0000 0%,
+        #ff8000 16.66%,
+        #ffff00 33.33%,
+        #00ff00 50%,
+        #00ffff 66.66%,
+        #0000ff 83.33%,
+        #8000ff 100%
+    );
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
 }
 
 .cell[data-special="magic"] {
@@ -1181,6 +1190,36 @@ button:hover {
     0% { transform: translate(-50%, -50%) scale(1); }
     50% { transform: translate(-50%, -50%) scale(1.2); }
     100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes rainbowEliminate {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+        background: linear-gradient(
+            45deg,
+            #ff0000 0%,
+            #ff8000 16.66%,
+            #ffff00 33.33%,
+            #00ff00 50%,
+            #00ffff 66.66%,
+            #0000ff 83.33%,
+            #8000ff 100%
+        );
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0.8;
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+.cell[data-special="rainbow"] .special-icon {
+    display: none;
 }
 
 /* 特殊方块和道具说明样式 */
@@ -1432,22 +1471,6 @@ button:hover {
         transform: scale(1);
         opacity: 0.8;
         box-shadow: 0 0 50px rgba(255, 235, 59, 1);
-    }
-    100% {
-        transform: scale(0);
-        opacity: 0;
-    }
-}
-
-@keyframes rainbowEliminate {
-    0% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.5);
-        opacity: 0.8;
-        filter: hue-rotate(180deg) brightness(1.5);
     }
     100% {
         transform: scale(0);
