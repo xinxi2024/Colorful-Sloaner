@@ -486,8 +486,22 @@ function checkGameEnd() {
         
         // 更新用户进度
         const userData = loadUserData();
-        updateUserProgress(currentLevel.id, currentScore, true);
-        checkAchievements(userData, currentLevel.id, currentScore, timeSpent);
+        if (!userData.completedLevels.includes(currentLevel.id)) {
+            userData.completedLevels.push(currentLevel.id);
+            userData.completedLevels.sort((a, b) => a - b);
+            userData.completedLevelsCount = userData.completedLevels.length;
+            
+            // 更新最高分
+            if (!userData.highScores[currentLevel.id] || currentScore > userData.highScores[currentLevel.id]) {
+                userData.highScores[currentLevel.id] = currentScore;
+            }
+            
+            // 保存更新后的数据
+            saveUserData(userData);
+            
+            // 检查成就
+            checkAchievements(userData, currentLevel.id, currentScore, timeSpent);
+        }
         
         // 清除存档和更新状态
         clearSavedGame();
@@ -516,7 +530,6 @@ function checkGameEnd() {
         
         // 更新用户进度
         const userData = loadUserData();
-        updateUserProgress(currentLevel.id, currentScore, false);
         userData.levelAttempts[currentLevel.id] = (userData.levelAttempts[currentLevel.id] || 0) + 1;
         saveUserData(userData);
         
@@ -1313,16 +1326,51 @@ function initUser() {
 }
 
 function loadUserData() {
-    const users = getAllUsers();
-    const user = users[currentUser];
-    return user ? user.data : null;
+    const defaultData = {
+        completedLevels: [],
+        completedLevelsCount: 0,
+        highScores: {},
+        levelAttempts: {},
+        achievements: [],
+        items: {
+            hammer: 3,
+            bomb: 3,
+            shuffle: 3,
+            hint: 3
+        }
+    };
+    
+    try {
+        const savedData = JSON.parse(localStorage.getItem('userData')) || defaultData;
+        // 确保所有必要的字段都存在
+        return {
+            ...defaultData,
+            ...savedData,
+            completedLevels: savedData.completedLevels || defaultData.completedLevels,
+            completedLevelsCount: savedData.completedLevelsCount || defaultData.completedLevelsCount,
+            highScores: savedData.highScores || defaultData.highScores,
+            levelAttempts: savedData.levelAttempts || defaultData.levelAttempts,
+            achievements: savedData.achievements || defaultData.achievements,
+            items: savedData.items || defaultData.items
+        };
+    } catch (error) {
+        console.error('加载用户数据时出错：', error);
+        return defaultData;
+    }
 }
 
 function saveUserData(userData) {
-    const users = getAllUsers();
-    if (users[currentUser]) {
-        users[currentUser].data = userData;
-        saveAllUsers(users);
+    try {
+        // 确保数据完整性
+        const dataToSave = {
+            ...loadUserData(), // 获取现有数据作为基础
+            ...userData,       // 使用新数据覆盖
+            completedLevelsCount: userData.completedLevels.length // 确保计数正确
+        };
+        localStorage.setItem('userData', JSON.stringify(dataToSave));
+        console.log('用户数据已保存：', dataToSave); // 添加调试日志
+    } catch (error) {
+        console.error('保存用户数据时出错：', error);
     }
 }
 
