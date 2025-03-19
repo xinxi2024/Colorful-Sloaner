@@ -3,34 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Colorful Sloaner - 登录</title>
+    <title>Colorful Sloaner</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* 自定义样式已移至style.css */
-    </style>
+    <script>
+        // 自动重定向到游戏页面
+        window.location.href = './game/game.html';
+    </script>
 </head>
 <body>
-    <div id="login-screen" class="screen">
+    <div id="redirect-message" class="screen">
         <div class="login-content">
             <h1 class="game-title">Colorful Sloaner</h1>
             <div class="game-description">
-                <p>欢迎来到色彩缤纷的消除世界！</p>
-                <p>挑战多样关卡，体验独特的消除玩法，解锁丰富成就！</p>
+                <p>正在加载游戏...</p>
             </div>
-            <div class="login-form">
-                <input type="text" id="username" placeholder="用户名" required>
-                <input type="password" id="password" placeholder="密码" required>
-                <button id="login-btn" class="start-button">登录</button>
-                <p class="register-link">还没有账号？<a href="register.html">立即注册</a></p>
-            </div>
-        </div>
-        <div class="floating-blocks">
-            <div class="float-block" style="--delay: 0s; --color: var(--color-1);"></div>
-            <div class="float-block" style="--delay: 1s; --color: var(--color-2);"></div>
-            <div class="float-block" style="--delay: 2s; --color: var(--color-3);"></div>
-            <div class="float-block" style="--delay: 3s; --color: var(--color-4);"></div>
         </div>
     </div>
-    <script src="auth.js"></script>
 </body>
 </html>

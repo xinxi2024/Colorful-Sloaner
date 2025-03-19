@@ -51,8 +51,16 @@
     <script>
         // 在页面加载完成后检查并显示公告
         document.addEventListener('DOMContentLoaded', () => {
+            // 确保初始化默认用户
             checkLoginStatus();
-            // 移除自动显示公告
+            setDefaultUser();
+            
+            // 启用音频
+            if (typeof window.enableAudio === 'function') {
+                window.enableAudio();
+            }
+            
+            // 设置公告按钮事件
             document.getElementById('announcement-btn').addEventListener('click', showAnnouncement);
         });
     </script>

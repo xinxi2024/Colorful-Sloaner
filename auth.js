@@ -70,6 +70,23 @@ function getAllUsers() {
         localStorage.setItem('users', JSON.stringify(parsedUsers));
     }
     
+    // 自动检查并创建默认用户
+    if (!parsedUsers['default_user']) {
+        // 创建默认用户数据
+        const userData = initUserData();
+        userData.username = 'default_user';
+        userData.completedLevelsCount = 0;
+        userData.totalScore = 0;
+        
+        parsedUsers['default_user'] = {
+            password: 'default_user',
+            data: userData
+        };
+        
+        // 保存更新后的用户数据
+        localStorage.setItem('users', JSON.stringify(parsedUsers));
+    }
+    
     return parsedUsers;
 }
 
@@ -78,7 +95,7 @@ function saveAllUsers(users) {
     localStorage.setItem('users', JSON.stringify(users));
 }
 
-// 注册新用户
+// 注册新用户 (保留但不再使用)
 function registerUser(username, password) {
     const users = getAllUsers();
     
@@ -104,7 +121,7 @@ function registerUser(username, password) {
     return true;
 }
 
-// 用户登录
+// 用户登录 (保留但不再使用)
 function loginUser(username, password) {
     const users = getAllUsers();
     const user = users[username];
@@ -119,25 +136,30 @@ function loginUser(username, password) {
     return true;
 }
 
+// 自动设置默认用户
+function setDefaultUser() {
+    const currentUser = localStorage.getItem('currentUser');
+    
+    // 如果没有当前用户，则设置为默认用户
+    if (!currentUser) {
+        localStorage.setItem('currentUser', 'default_user');
+    }
+}
+
 // 页面加载时检查登录状态
 function checkLoginStatus() {
-    const currentUser = localStorage.getItem('currentUser');
     const currentPath = window.location.pathname;
     
-    // 如果用户已登录且在登录/注册页面，则重定向到游戏页面
-    if (currentUser) {
-        if (currentPath.endsWith('login.html') || 
-            currentPath.endsWith('register.html') || 
-            currentPath.endsWith('index.html') || 
-            currentPath === '/') {
-            window.location.href = './game/game.html';
-            return;
-        }
-    }
+    // 确保创建了默认用户
+    getAllUsers();
+    setDefaultUser();
     
-    // 如果用户未登录且在游戏页面，则重定向到登录页面
-    if (!currentUser && currentPath.includes('/game/')) {
-        window.location.href = '../index.html';
+    // 如果在登录/注册页面，则重定向到游戏页面
+    if (currentPath.endsWith('login.html') || 
+        currentPath.endsWith('register.html') || 
+        currentPath.endsWith('index.html') || 
+        currentPath === '/') {
+        window.location.href = './game/game.html';
         return;
     }
 
@@ -151,7 +173,7 @@ function checkLoginStatus() {
     }
 }
 
-// 在登录页面初始化
+// 在登录页面初始化 (保留但不再使用)
 if (document.getElementById('login-btn')) {
     checkLoginStatus();
     
@@ -174,7 +196,7 @@ if (document.getElementById('login-btn')) {
     });
 }
 
-// 在注册页面初始化
+// 在注册页面初始化 (保留但不再使用)
 if (document.getElementById('register-btn')) {
     checkLoginStatus();
     
@@ -221,6 +243,9 @@ function handleRegisterSuccess(username) {
 
 // 页面加载完成后初始化音频
 document.addEventListener('DOMContentLoaded', () => {
+    // 确保执行检查登录状态
+    checkLoginStatus();
+    
     // 如果在登录或注册页面，等待用户交互后再启用音频
     if (document.getElementById('login-screen') || document.getElementById('register-screen')) {
         // 添加点击事件监听器来启用音频
@@ -236,26 +261,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 修改登出处理函数
 function handleLogout() {
-    // 清除所有相关的本地存储数据
-    localStorage.removeItem('currentUser');
+    // 清除相关的本地存储数据，但保留当前用户为默认用户
+    localStorage.setItem('currentUser', 'default_user');
     localStorage.removeItem('lastPageState');
     localStorage.removeItem('currentGroup');
     
-    // 获取当前路径信息
-    const currentPath = window.location.pathname;
-    
-    // 确定重定向路径
-    let redirectPath;
-    if (currentPath.includes('/game/')) {
-        // 如果在游戏目录下，返回上一级
-        redirectPath = '../index.html';
-    } else {
-        // 如果在根目录，直接跳转到index.html
-        redirectPath = './index.html';
-    }
-    
-    // 使用相对路径进行重定向
-    window.location.href = redirectPath;
+    // 刷新页面以更新UI
+    window.location.reload();
 }
 
 // 修改用户面板函数
@@ -270,7 +282,10 @@ function toggleUserPanel() {
     panel.className = 'user-panel';
     
     const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) return;
+    if (!currentUser) {
+        setDefaultUser();
+        return;
+    }
 
     const users = getAllUsers();
     const userData = users[currentUser]?.data || initUserData();
@@ -285,7 +300,6 @@ function toggleUserPanel() {
             <p>已完成关卡：${userData.completedLevelsCount || 0}</p>
             <p>总分：${totalScore}</p>
             <p>最高分：${maxScore}</p>
-            <button class="logout-btn" onclick="handleLogout()">登出</button>
         </div>
     `;
     
@@ -311,6 +325,5 @@ function toggleUserPanel() {
     });
 }
 
-// 确保函数在全局范围内可用
-window.handleLogout = handleLogout;
-window.toggleUserPanel = toggleUserPanel;
+// 确保页面加载时初始化默认用户
+document.addEventListener('DOMContentLoaded', checkLoginStatus);
